@@ -30,7 +30,24 @@ public class BaseMessage implements MessageIFace {
 
     public int destinationSegmentId = 0;
 
+    public long callingOwner = -1;
 
+    public BaseMessage() {
+
+    }
+
+    public BaseMessage(long deviceId, long externallMessageId, String messageType, long latencyMs, String errorMessage,
+            Date createDate, int destinationSegmentId, long callingOwner) {
+        super();
+        this.deviceId = deviceId;
+        this.externallMessageId = externallMessageId;
+        this.messageType = messageType;
+        this.latencyMs = latencyMs;
+        this.errorMessage = errorMessage;
+        this.createDate = createDate;
+        this.destinationSegmentId = destinationSegmentId;
+        this.callingOwner = callingOwner;
+    }
 
     @Override
     public String asJson(Gson g) {
@@ -60,6 +77,8 @@ public class BaseMessage implements MessageIFace {
         b.append(delimChar);
         b.append(destinationSegmentId);
         b.append(delimChar);
+        b.append(callingOwner);
+        b.append(delimChar);
 
         return b;
 
@@ -82,7 +101,7 @@ public class BaseMessage implements MessageIFace {
         }
 
         destinationSegmentId = Integer.parseInt(internals[7]);
-
+        callingOwner = Long.parseLong(internals[8]);
     }
 
     public static String delimitedMessageType(String delimChar, String message) {
@@ -95,13 +114,10 @@ public class BaseMessage implements MessageIFace {
     public static Object fromJson(String mAsJson, Gson g) throws JsonSyntaxException, ClassNotFoundException {
         BaseMessage baseObject = g.fromJson(mAsJson, BaseMessage.class);
 
-        Object newObject = g.fromJson(mAsJson,
-                Class.forName(ReferenceData.EDGEMESSAGES + baseObject.messageType));
+        Object newObject = g.fromJson(mAsJson, Class.forName(ReferenceData.EDGEMESSAGES + baseObject.messageType));
         return newObject;
 
     }
-
-
 
     /**
      * @return the internalMessageId
@@ -267,6 +283,21 @@ public class BaseMessage implements MessageIFace {
      */
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    /**
+     * @return the callingOwner
+     */
+    public long getCallingOwner() {
+        return callingOwner;
+    }
+
+    /**
+     * @param callingOwner the callingOwner to set
+     */
+    @Override
+    public void setCallingOwner(long callingOwner) {
+        this.callingOwner = callingOwner;
     }
 
 }

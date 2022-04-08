@@ -27,7 +27,7 @@ public class StopMessage extends BaseMessage {
 
         boolean stopped = false;
 
-        if (fields[8].equals("true")) {
+        if (fields[9].equals("true")) {
             stopped = true;
         }
 
@@ -46,12 +46,37 @@ public class StopMessage extends BaseMessage {
 
         stopped = false;
 
-        if (internals[8].equals("true")) {
+        if (internals[9].equals("true")) {
             stopped = true;
         }
 
+    }
 
-
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("StopMessage [stopped=");
+        builder.append(stopped);
+        builder.append(", deviceId=");
+        builder.append(deviceId);
+        builder.append(", externallMessageId=");
+        builder.append(externallMessageId);
+        builder.append(", internalMessageId=");
+        builder.append(internalMessageId);
+        builder.append(", messageType=");
+        builder.append(messageType);
+        builder.append(", latencyMs=");
+        builder.append(latencyMs);
+        builder.append(", errorMessage=");
+        builder.append(errorMessage);
+        builder.append(", createDate=");
+        builder.append(createDate);
+        builder.append(", destinationSegmentId=");
+        builder.append(destinationSegmentId);
+        builder.append(", callingOwner=");
+        builder.append(callingOwner);
+        builder.append("]");
+        return builder.toString();
     }
 
 }

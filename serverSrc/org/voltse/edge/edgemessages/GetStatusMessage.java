@@ -23,7 +23,7 @@ public class GetStatusMessage extends BaseMessage {
 
         String[] fields = message.split(c);
 
-        String jsonPayload = fields[8];
+        String jsonPayload = fields[9];
 
         GetStatusMessage m = new GetStatusMessage();
         m.setInternals(fields);
@@ -51,9 +51,35 @@ public class GetStatusMessage extends BaseMessage {
 
         super.setInternals(internals);
 
-        jsonPayload = internals[8];
+        jsonPayload = internals[9];
 
     }
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("GetStatusMessage [jsonPayload=");
+        builder.append(jsonPayload);
+        builder.append(", deviceId=");
+        builder.append(deviceId);
+        builder.append(", externallMessageId=");
+        builder.append(externallMessageId);
+        builder.append(", internalMessageId=");
+        builder.append(internalMessageId);
+        builder.append(", messageType=");
+        builder.append(messageType);
+        builder.append(", latencyMs=");
+        builder.append(latencyMs);
+        builder.append(", errorMessage=");
+        builder.append(errorMessage);
+        builder.append(", createDate=");
+        builder.append(createDate);
+        builder.append(", destinationSegmentId=");
+        builder.append(destinationSegmentId);
+        builder.append(", callingOwner=");
+        builder.append(callingOwner);
+        builder.append("]");
+        return builder.toString();
+    }
 
 }

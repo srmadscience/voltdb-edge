@@ -1,0 +1,11 @@
+<topics enabled="true">
+<topic name="downstream_1_topic" procedure="SendMessageDownstream">
+</topic><topic name="upstream_1_topic" procedure="SendMessageUpstream">
+<property name="producer.parameters.includeKey">true</property> 
+</topic>
+<topic name="segment_0_topic"/>
+<topic name="segment_1_topic"/>
+<topic name="powerco_0_topic"/>
+<topic name="powerco_1_topic"/>
+<topic name="error_topic"/>
+</topics>

@@ -1,5 +1,6 @@
 package org.voltse.edge.edgemessages;
 
+import java.util.Arrays;
 import java.util.Base64;
 
 public class UpgradeFirmwareMessage extends BaseMessage {
@@ -42,70 +43,98 @@ public class UpgradeFirmwareMessage extends BaseMessage {
         this.enabled = enabled;
     }
 
+    @Override
+    public StringBuffer asDelimited(String delimChar) {
+        StringBuffer b = super.asDelimited(delimChar);
 
+        b.append(Base64.getEncoder().encodeToString(payload));
+        b.append(delimChar);
+        b.append(enabled);
+        b.append(delimChar);
+        b.append(message);
+        b.append(delimChar);
 
-  @Override
-public StringBuffer asDelimited(String delimChar) {
-    StringBuffer b = super.asDelimited(delimChar);
-
-    b.append(Base64.getEncoder().encodeToString(payload));
-    b.append(delimChar);
-    b.append(enabled);
-    b.append(delimChar);
-    b.append(message);
-    b.append(delimChar);
-
-    return b;
-}
-
-public static UpgradeFirmwareMessage fromDelimited(String delimChar, String message) {
-
-    String[] fields = message.split(delimChar);
-
-    UpgradeFirmwareMessage m = new UpgradeFirmwareMessage();
-    m.setInternals(fields);
-
-
-    m.setPayload(Base64.getDecoder().decode(fields[8]));
-
-    m.setEnabled(false);
-
-    if (fields[9].equals("true")) {
-        m.setEnabled(true);
-    }
-    m.setMessage(fields[10]) ;
-
-    return m;
-}
-
-@Override
-public void setInternals(String[] internals) {
-
-    super.setInternals(internals);
-
-    setPayload(Base64.getDecoder().decode(internals[8]));
-
-    enabled = false;
-
-    if (internals[9].equals("true")) {
-        enabled = true;
+        return b;
     }
 
-    message = internals[10];
+    public static UpgradeFirmwareMessage fromDelimited(String delimChar, String message) {
 
-}
+        String[] fields = message.split(delimChar);
 
-/**
- * @return the message
- */
-public String getMessage() {
-    return message;
-}
+        UpgradeFirmwareMessage m = new UpgradeFirmwareMessage();
+        m.setInternals(fields);
 
-/**
- * @param message the message to set
- */
-public void setMessage(String message) {
-    this.message = message;
-}
+        m.setPayload(Base64.getDecoder().decode(fields[9]));
+
+        m.setEnabled(false);
+
+        if (fields[10].equals("true")) {
+            m.setEnabled(true);
+        }
+        m.setMessage(fields[11]);
+
+        return m;
+    }
+
+    @Override
+    public void setInternals(String[] internals) {
+
+        super.setInternals(internals);
+
+        setPayload(Base64.getDecoder().decode(internals[9]));
+
+        enabled = false;
+
+        if (internals[10].equals("true")) {
+            enabled = true;
+        }
+
+        message = internals[11];
+
+    }
+
+    /**
+     * @return the message
+     */
+    public String getMessage() {
+        return message;
+    }
+
+    /**
+     * @param message the message to set
+     */
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("UpgradeFirmwareMessage [payload=");
+        builder.append(Arrays.toString(payload));
+        builder.append(", enabled=");
+        builder.append(enabled);
+        builder.append(", message=");
+        builder.append(message);
+        builder.append(", deviceId=");
+        builder.append(deviceId);
+        builder.append(", externallMessageId=");
+        builder.append(externallMessageId);
+        builder.append(", internalMessageId=");
+        builder.append(internalMessageId);
+        builder.append(", messageType=");
+        builder.append(messageType);
+        builder.append(", latencyMs=");
+        builder.append(latencyMs);
+        builder.append(", errorMessage=");
+        builder.append(errorMessage);
+        builder.append(", createDate=");
+        builder.append(createDate);
+        builder.append(", destinationSegmentId=");
+        builder.append(destinationSegmentId);
+        builder.append(", callingOwner=");
+        builder.append(callingOwner);
+        builder.append("]");
+        return builder.toString();
+    }
 }

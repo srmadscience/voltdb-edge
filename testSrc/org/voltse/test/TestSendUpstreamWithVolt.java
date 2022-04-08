@@ -1,7 +1,10 @@
+package org.voltse.test;
+
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 
 import org.junit.jupiter.api.AfterAll;
@@ -55,10 +58,10 @@ class TestSendUpstreamWithVolt {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
 
             ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -72,22 +75,20 @@ class TestSendUpstreamWithVolt {
             fail(e.getMessage());
         }
 
-
     }
-
 
     @Test
     void testUpstreamBuf() {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
 
-            c.callProcedure("@AdHoc","UPDATE device_messages SET status_code = 'BUF' WHERE device_id = "
-                    + m.getDeviceId() +";");
+            c.callProcedure("@AdHoc",
+                    "UPDATE device_messages SET status_code = 'BUF' WHERE device_id = " + m.getDeviceId() + ";");
 
             ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -101,21 +102,18 @@ class TestSendUpstreamWithVolt {
             fail(e.getMessage());
         }
 
-
     }
-
-
 
     @Test
     void testUpstreamIdDeviceMismatch() {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
             m.setDeviceId(TestSendDownstreamWithVolt.GENERIC_DEVICE_ID + 1);
 
             ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -129,19 +127,17 @@ class TestSendUpstreamWithVolt {
             fail(e.getMessage());
         }
 
-
     }
-
 
     @Test
     void testUpstreamIdBadDevice() {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
 
             ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID + 1,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -155,20 +151,18 @@ class TestSendUpstreamWithVolt {
             fail(e.getMessage());
         }
 
-
     }
-
 
     @Test
     void testUpstreamExternalId() {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
             m.setExternallMessageId(0);
 
-            ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID ,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+            ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -181,7 +175,6 @@ class TestSendUpstreamWithVolt {
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
-
 
     }
 
@@ -190,11 +183,11 @@ class TestSendUpstreamWithVolt {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
             m.setInternalMessageId(0);
 
-            ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID ,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+            ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -208,20 +201,18 @@ class TestSendUpstreamWithVolt {
             fail(e.getMessage());
         }
 
-
     }
-
 
     @Test
     void testUpstreamNoInternalId() {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
             m.setInternalMessageId(0);
 
-            ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID ,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+            ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -235,21 +226,18 @@ class TestSendUpstreamWithVolt {
             fail(e.getMessage());
         }
 
-
     }
-
-
 
     @Test
     void testUpstreamNoExternalId() {
 
         try {
 
-            GetStatusMessage m = testDownstream();
+            GetStatusMessage m = creatTestMessage();
             m.setExternallMessageId(0);
 
             ClientResponse cr = c.callProcedure("SendMessageUpstream", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+                    m.getDeviceId() + "," + Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -263,10 +251,7 @@ class TestSendUpstreamWithVolt {
             fail(e.getMessage());
         }
 
-
     }
-
-
 
     void testProvison() {
 
@@ -289,7 +274,7 @@ class TestSendUpstreamWithVolt {
 
     }
 
-    public GetStatusMessage testDownstream() {
+    public GetStatusMessage creatTestMessage() {
 
         testProvison();
 
@@ -302,7 +287,7 @@ class TestSendUpstreamWithVolt {
             m.setExternallMessageId(TestSendDownstreamWithVolt.GENERIC_EXTERNAL_MESSAGE_ID);
 
             ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),
-                    TestSendDownstreamWithVolt.TEST_OWNER, m.getMessageType(), m.asJson(g));
+                    TestSendDownstreamWithVolt.TEST_OWNER, Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());

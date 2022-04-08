@@ -1,3 +1,5 @@
+package org.voltse.test;
+
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.SimpleDateFormat;
@@ -416,8 +418,7 @@ class TestMessages {
 
             String mAsDelim = m.asDelimited(DELIM_CHAR).toString();
 
-            UpgradeFirmwareMessage m2 = UpgradeFirmwareMessage.fromDelimited(DELIM_CHAR,
-                    mAsDelim);
+            UpgradeFirmwareMessage m2 = UpgradeFirmwareMessage.fromDelimited(DELIM_CHAR, mAsDelim);
 
             String m2AsDelim = m2.asDelimited(DELIM_CHAR).toString();
 
@@ -605,7 +606,7 @@ class TestMessages {
     void testEncode() {
         try {
 
-            ModelEncoderIFace[] encoders = { new JsonEncoderImpl(), new  TabEncoderImpl()};
+            ModelEncoderIFace[] encoders = { new JsonEncoderImpl(), new TabEncoderImpl() };
 
             for (ModelEncoderIFace encoder : encoders) {
 

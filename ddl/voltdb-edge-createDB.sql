@@ -48,34 +48,51 @@ PARTITION TABLE device_messages ON COLUMN device_id;
 CREATE STREAM segment_1_stream
 PARTITION ON COLUMN device_id 
   EXPORT TO TOPIC segment_1_topic
-(device_id bigint not null 
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
 ,payload varchar(2048));
 
 CREATE STREAM segment_0_stream
 PARTITION ON COLUMN device_id 
   EXPORT TO TOPIC segment_0_topic
-(device_id bigint not null 
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
 ,payload varchar(2048));
 
 CREATE STREAM powerco_1_stream
 PARTITION ON COLUMN device_id 
   EXPORT TO TOPIC powerco_1_topic
-(device_id bigint not null 
+  WITH KEY (message_id) VALUE (message_id,device_id,payload,util_id)
+(message_id bigint not null
+,device_id bigint not null 
 ,util_id bigint not null
 ,payload varchar(2048));
 
 CREATE STREAM powerco_0_stream
 PARTITION ON COLUMN device_id 
   EXPORT TO TOPIC powerco_0_topic
-(device_id bigint not null 
+  WITH KEY (message_id) VALUE (message_id,device_id,payload,util_id)
+(message_id bigint not null
+,device_id bigint not null 
 ,util_id bigint not null
+,payload varchar(2048));
+
+CREATE STREAM error_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC error_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,error_code,event_kind,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,error_code tinyint not null
+,event_kind varchar(80)
 ,payload varchar(2048));
 
 
 CREATE PROCEDURE  
    PARTITION ON TABLE  devices COLUMN device_id
    FROM CLASS edgeprocs.ProvisionDevice;
-   
    
 CREATE PROCEDURE  
    PARTITION ON TABLE  devices COLUMN device_id
@@ -98,6 +115,14 @@ WHERE device_id = ?
 ORDER BY message_date, internal_message_id ;
 END;
 
+CREATE PROCEDURE GetDeviceMessage
+PARTITION ON TABLE DEVICES COLUMN DEVICE_ID
+AS
+SELECT *
+FROM device_messages 
+WHERE device_id = ?
+AND   message_id = ?
+ORDER BY device_id,message_id ;
 
 END_OF_BATCH
 

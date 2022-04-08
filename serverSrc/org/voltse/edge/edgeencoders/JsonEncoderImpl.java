@@ -10,14 +10,14 @@ public class JsonEncoderImpl implements ModelEncoderIFace {
     Gson g = new Gson();
 
     @Override
-    public String encode(MessageIFace m)  throws Exception {
+    public String encode(MessageIFace m) throws Exception {
         return m.asJson(g);
     }
 
     @Override
-    public MessageIFace decode(String s) throws Exception  {
+    public MessageIFace decode(String s) throws Exception {
 
-        return (MessageIFace)BaseMessage.fromJson(s, g);
+        return (MessageIFace) BaseMessage.fromJson(s, g);
     }
 
 }

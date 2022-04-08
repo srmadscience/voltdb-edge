@@ -26,7 +26,7 @@ public class StartMessage extends BaseMessage {
 
         boolean started = false;
 
-        if (fields[8].equals("true")) {
+        if (fields[9].equals("true")) {
             started = true;
         }
 
@@ -45,11 +45,36 @@ public class StartMessage extends BaseMessage {
 
         started = false;
 
-        if (internals[8].equals("true")) {
+        if (internals[9].equals("true")) {
             started = true;
         }
 
+    }
 
-
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("StartMessage [started=");
+        builder.append(started);
+        builder.append(", deviceId=");
+        builder.append(deviceId);
+        builder.append(", externallMessageId=");
+        builder.append(externallMessageId);
+        builder.append(", internalMessageId=");
+        builder.append(internalMessageId);
+        builder.append(", messageType=");
+        builder.append(messageType);
+        builder.append(", latencyMs=");
+        builder.append(latencyMs);
+        builder.append(", errorMessage=");
+        builder.append(errorMessage);
+        builder.append(", createDate=");
+        builder.append(createDate);
+        builder.append(", destinationSegmentId=");
+        builder.append(destinationSegmentId);
+        builder.append(", callingOwner=");
+        builder.append(callingOwner);
+        builder.append("]");
+        return builder.toString();
     }
 }

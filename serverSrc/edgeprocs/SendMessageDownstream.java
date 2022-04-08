@@ -3,6 +3,8 @@ package edgeprocs;
 import java.util.Base64;
 import java.util.HashMap;
 
+import org.voltcore.logging.VoltLogger;
+
 /* This file is part of VoltDB.
  * Copyright (C) 2008-2020 VoltDB Inc.
  *
@@ -62,10 +64,14 @@ public class SendMessageDownstream extends VoltProcedure {
             + "(?,NOW,?,?,?);");
 
     public static final SQLStmt insertIntoStream0 = new SQLStmt(
-            "INSERT INTO segment_0_stream(device_id, payload) VALUES (?,?);");
+            "INSERT INTO segment_0_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
     public static final SQLStmt insertIntoStream1 = new SQLStmt(
-            "INSERT INTO segment_1_stream(device_id, payload) VALUES (?,?);");
+            "INSERT INTO segment_1_stream(message_id, device_id, payload) VALUES (?,?,?);");
+
+    public static final SQLStmt reportError  = new SQLStmt("INSERT INTO error_stream "
+            + "(message_id,device_id,error_code,event_kind,payload) "
+            + "VALUES (?,?,?,?,?);");
 
     public static final SQLStmt[] downstreamInserts = {insertIntoStream0, insertIntoStream1};
 
@@ -75,8 +81,13 @@ public class SendMessageDownstream extends VoltProcedure {
 
     HashMap<String, ModelEncoderIFace> encoders = new HashMap<>();
 
-    public VoltTable[] run(long deviceId, long callingOwner, String action, String serializedMessage)
-            throws VoltAbortException {
+    static VoltLogger LOG = new VoltLogger("SendMessageDownstream");
+
+    public VoltTable[] run(long deviceId, long callingOwner, String serializedMessage) throws VoltAbortException {
+
+        this.setAppStatusCode(ReferenceData.OK);
+
+        final long thisTxId = this.getUniqueId();
 
         this.setAppStatusCode(ReferenceData.OK);
 
@@ -84,26 +95,38 @@ public class SendMessageDownstream extends VoltProcedure {
 
         MessageIFace ourMessage;
 
+        String un64dMessage = null;
+
         try {
-            ourMessage = (MessageIFace) BaseMessage.fromJson(serializedMessage, g);
+            un64dMessage = new String(Base64.getDecoder().decode(serializedMessage));
+        } catch (Exception e) {
+            reportError(this.getUniqueId(), ReferenceData.ERROR_DECODER_FAILURE, deviceId, "SendMessageUpstream",
+                    "message not Base 64: " + serializedMessage);
+            return null;
+        }
+
+        try {
+
+            ourMessage = (MessageIFace) BaseMessage.fromJson(un64dMessage, g);
 
         } catch (JsonSyntaxException e) {
-            reportError(ReferenceData.ERROR_BAD_JSON, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_BAD_JSON, deviceId, "SendMessageDownstream", serializedMessage);
             return null;
         } catch (ClassNotFoundException e) {
-            reportError(ReferenceData.ERROR_MESSAGE_OBJECT_CLASS_NOT_FOUND, deviceId, callingOwner, action,
+            reportError(thisTxId, ReferenceData.ERROR_MESSAGE_OBJECT_CLASS_NOT_FOUND, deviceId, "SendMessageDownstream",
                     serializedMessage);
             return null;
         }
 
         if (ourMessage.getExternallMessageId() <= 0) {
-            reportError(ReferenceData.ERROR_MISSING_EXTERNAL_MESSAGE_ID, deviceId, callingOwner, action,
-                    serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_MISSING_EXTERNAL_MESSAGE_ID, deviceId,
+                    ourMessage.getMessageType(), un64dMessage);
             return null;
         }
 
         if (ourMessage.getDeviceId() != deviceId) {
-            reportError(ReferenceData.ERROR_DEVICE_ID_MISMATCH, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_DEVICE_ID_MISMATCH, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
 
@@ -117,14 +140,16 @@ public class SendMessageDownstream extends VoltProcedure {
         VoltTable[] firstRound = voltExecuteSQL();
 
         if (!firstRound[0].advanceRow()) {
-            reportError(ReferenceData.ERROR_UNKNOWN_UTIL_CO, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_UNKNOWN_UTIL_CO, deviceId, ourMessage.getMessageType(),
+                    callingOwner + " " + un64dMessage);
             return null;
 
         }
 
         if (!firstRound[1].advanceRow()) {
 
-            reportError(ReferenceData.ERROR_UNKNOWN_DEVICE, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_UNKNOWN_DEVICE, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
 
@@ -132,7 +157,8 @@ public class SendMessageDownstream extends VoltProcedure {
 
         if (!firstRound[2].advanceRow()) {
 
-            reportError(ReferenceData.ERROR_UNKNOWN_LOCATION, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_UNKNOWN_LOCATION, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
 
@@ -140,7 +166,8 @@ public class SendMessageDownstream extends VoltProcedure {
 
         if (!firstRound[3].advanceRow()) {
 
-            reportError(ReferenceData.ERROR_UNKNOWN_MODEL, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_UNKNOWN_MODEL, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
 
@@ -148,14 +175,16 @@ public class SendMessageDownstream extends VoltProcedure {
 
         if (firstRound[4].advanceRow()) {
 
-            reportError(ReferenceData.ERROR_DUPLICATE_MESSAGE, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_DUPLICATE_MESSAGE, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
 
         int destinationSegmentId = (int) thisLocationTable.getLong("segment_id");
 
         if (destinationSegmentId < 0 || destinationSegmentId >= downstreamInserts.length) {
-            reportError(ReferenceData.ERROR_INVALID_SEGMENT_ID, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_INVALID_SEGMENT_ID, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
 
@@ -167,7 +196,8 @@ public class SendMessageDownstream extends VoltProcedure {
         TimestampType lastFirmWareUpdate = thisDeviceTable.getTimestampAsTimestamp("last_firmware_update");
 
         if (callingOwner != currentOwnerId) {
-            reportError(ReferenceData.ERROR_NOT_YOUR_DEVICE, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_NOT_YOUR_DEVICE, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
 
@@ -180,13 +210,19 @@ public class SendMessageDownstream extends VoltProcedure {
                 ourEncoder = (ModelEncoderIFace) Class.forName(modelEncoderClassName).newInstance();
 
             } catch (Exception e) {
-                reportError(ReferenceData.ERROR_ENCODER_OBJECT_CLASS_NOT_FOUND, deviceId, callingOwner, action,
-                        serializedMessage);
+                reportError(thisTxId, ReferenceData.ERROR_ENCODER_OBJECT_CLASS_NOT_FOUND, deviceId,
+                        ourMessage.getMessageType(), un64dMessage);
                 return null;
             }
 
             encoders.put(modelNumber, ourEncoder);
         }
+
+        ourMessage.setInternalMessageId(thisTxId);
+        ourMessage.setDestinationSegmentId(destinationSegmentId);
+        ourMessage.setCreateDate(getTransactionTime());
+        ourMessage.setCallingOwner(callingOwner);
+        String messageStatus = ReferenceData.MESSAGE_IN_FLIGHT;
 
         String encodedMessage = null;
 
@@ -194,15 +230,10 @@ public class SendMessageDownstream extends VoltProcedure {
             encodedMessage = ourEncoder.encode(ourMessage);
             encodedMessage = Base64.getEncoder().encodeToString(encodedMessage.getBytes());
         } catch (Exception e) {
-            reportError(ReferenceData.ERROR_ENCODER_FAILURE, deviceId, callingOwner, action, serializedMessage);
+            reportError(thisTxId, ReferenceData.ERROR_ENCODER_FAILURE, deviceId, ourMessage.getMessageType(),
+                    un64dMessage);
             return null;
         }
-
-        final long thisTxId = this.getUniqueId();
-
-        ourMessage.setInternalMessageId(thisTxId);
-        ourMessage.setDestinationSegmentId(destinationSegmentId);
-        String messageStatus = ReferenceData.MESSAGE_IN_FLIGHT;
 
         // Record messages existence...
         voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), thisTxId, messageStatus);
@@ -210,18 +241,22 @@ public class SendMessageDownstream extends VoltProcedure {
         // See if link has capacity
 
         // if so, send now...
-        voltQueueSQL(downstreamInserts[ourMessage.getDestinationSegmentId()], deviceId, encodedMessage);
+        voltQueueSQL(downstreamInserts[ourMessage.getDestinationSegmentId()], ourMessage.getExternallMessageId(),
+                deviceId, encodedMessage);
 
         // if not, buffer
         voltExecuteSQL();
         return null;
     }
 
-    private void reportError(byte errorCode, long deviceId, long callingOwner, String action,
-            String serializedMessage) {
+    private void reportError(long messageId, byte errorCode, long deviceId, String action, String payload) {
+
+        voltQueueSQL(reportError, messageId, deviceId, errorCode, action, payload);
 
         this.setAppStatusCode(errorCode);
-        this.setAppStatusString(errorCode + ":" + deviceId + ":" + callingOwner + ":" + action + ":" + serializedMessage);
+        this.setAppStatusString(errorCode + ":" + deviceId + ":" + action + ":" + payload);
+
+        LOG.error(deviceId + ":" + action + ":" + payload);
         voltExecuteSQL();
 
     }

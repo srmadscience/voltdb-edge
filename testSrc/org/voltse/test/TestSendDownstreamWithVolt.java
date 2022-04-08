@@ -1,7 +1,10 @@
+package org.voltse.test;
+
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 
 import org.junit.jupiter.api.AfterAll;
@@ -27,24 +30,23 @@ class TestSendDownstreamWithVolt {
 
     public static final int GENERIC_EXTERNAL_MESSAGE_ID = 415;
 
-
     public final static String TEST_METER_NAME = "MeterTron100";
     public final String TEST_DELIM_METER_NAME = "HomeMeter100";
     public final static long TEST_LOCATION = 1;
     public final static long TEST_OWNER = 1;
+    public static final long GENERIC_POWERCO = 1;
 
     public final String TEST_BAD_METER_NAME = "NOT MeterTron100";
     public final long TEST_BAD_LOCATION = -1;
     public final long TEST_BAD_OWNER = -1;
 
-       Client c;
+    Client c;
     Gson g = new Gson();
 
-    String[] tablesToDelete = { "DEVICES","device_messages" };
+    String[] tablesToDelete = { "DEVICES", "device_messages" };
 
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
-
 
     }
 
@@ -57,7 +59,7 @@ class TestSendDownstreamWithVolt {
         c = connectVoltDB("localhost");
 
         for (String element : tablesToDelete) {
-            c.callProcedure("@AdHoc", "DELETE FROM " + element+";");
+            c.callProcedure("@AdHoc", "DELETE FROM " + element + ";");
         }
     }
 
@@ -70,7 +72,7 @@ class TestSendDownstreamWithVolt {
     @Test
     void testDownstream() {
 
-        testProvison() ;
+        testProvison();
 
         try {
 
@@ -78,7 +80,8 @@ class TestSendDownstreamWithVolt {
             m.setDeviceId(GENERIC_DEVICE_ID);
             m.setExternallMessageId(GENERIC_EXTERNAL_MESSAGE_ID);
 
-            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.getMessageType(), m.asJson(g) );
+            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(), TEST_OWNER,
+                    Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -88,18 +91,16 @@ class TestSendDownstreamWithVolt {
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (Exception e) {
             fail(e.getMessage());
         }
-
 
     }
 
     @Test
     void testDownstreamDeviceIdMismatch() {
 
-        testProvison() ;
+        testProvison();
 
         try {
 
@@ -107,7 +108,8 @@ class TestSendDownstreamWithVolt {
             m.setDeviceId(GENERIC_DEVICE_ID);
             m.setExternallMessageId(GENERIC_EXTERNAL_MESSAGE_ID);
 
-            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId() + 1,  TEST_OWNER, m.getMessageType(), m.asJson(g) );
+            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId() + 1, TEST_OWNER,
+                    Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -117,19 +119,16 @@ class TestSendDownstreamWithVolt {
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (Exception e) {
             fail(e.getMessage());
         }
 
-
     }
-
 
     @Test
     void testDownstreamDelim() {
 
-        testProvisonOtherMeterKind() ;
+        testProvisonOtherMeterKind();
 
         try {
 
@@ -137,7 +136,8 @@ class TestSendDownstreamWithVolt {
             m.setDeviceId(GENERIC_DEVICE_ID);
             m.setExternallMessageId(GENERIC_EXTERNAL_MESSAGE_ID);
 
-            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.getMessageType(), m.asJson(g) );
+            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(), TEST_OWNER,
+                    Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -147,20 +147,16 @@ class TestSendDownstreamWithVolt {
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (Exception e) {
             fail(e.getMessage());
         }
 
-
     }
-
-
 
     @Test
     void testDownstreamBadDevice() {
 
-        testProvison() ;
+        testProvison();
 
         try {
 
@@ -168,7 +164,8 @@ class TestSendDownstreamWithVolt {
             m.setDeviceId(GENERIC_BAD_DEVICE_ID);
             m.setExternallMessageId(GENERIC_EXTERNAL_MESSAGE_ID);
 
-            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.getMessageType(), m.asJson(g) );
+            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(), TEST_OWNER,
+                    Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -178,21 +175,16 @@ class TestSendDownstreamWithVolt {
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (Exception e) {
             fail(e.getMessage());
         }
 
-
     }
-
-
 
     @Test
     void testDownstreamTwice() {
 
-        testProvison() ;
-
+        testProvison();
 
         try {
 
@@ -200,9 +192,8 @@ class TestSendDownstreamWithVolt {
             m.setDeviceId(GENERIC_DEVICE_ID);
             m.setExternallMessageId(GENERIC_EXTERNAL_MESSAGE_ID);
 
-
-
-            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.getMessageType(), m.asJson(g) );
+            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(), TEST_OWNER,
+                    Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -212,7 +203,8 @@ class TestSendDownstreamWithVolt {
                 fail(cr.getAppStatusString());
             }
 
-cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.getMessageType(), m.asJson(g) );
+            cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(), TEST_OWNER,
+                    Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -222,19 +214,16 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (Exception e) {
             fail(e.getMessage());
         }
 
-
     }
-
 
     @Test
     void testDownstreamBadOwner() {
 
-        testProvison() ;
+        testProvison();
 
         try {
 
@@ -242,7 +231,8 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
             m.setDeviceId(GENERIC_DEVICE_ID);
             m.setExternallMessageId(GENERIC_EXTERNAL_MESSAGE_ID);
 
-            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_BAD_OWNER, m.getMessageType(), m.asJson(g) );
+            ClientResponse cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(), TEST_BAD_OWNER,
+                    Base64.getEncoder().encodeToString(m.asJson(g).getBytes()));
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -252,22 +242,18 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (Exception e) {
             fail(e.getMessage());
         }
 
-
     }
-
-
-
 
     @Test
     void testProvison() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME, TEST_LOCATION, TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME, TEST_LOCATION,
+                    TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -277,11 +263,9 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
-
 
     }
 
@@ -289,7 +273,8 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
     void testProvisonOtherMeterKind() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_DELIM_METER_NAME, TEST_LOCATION, TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_DELIM_METER_NAME,
+                    TEST_LOCATION, TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -299,11 +284,9 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
-
 
     }
 
@@ -313,7 +296,8 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
         testProvison();
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME, TEST_LOCATION, TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME, TEST_LOCATION,
+                    TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -323,20 +307,18 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
 
-
     }
-
 
     @Test
     void testProvisonBadLocation() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME, TEST_BAD_LOCATION, TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME,
+                    TEST_BAD_LOCATION, TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -346,11 +328,9 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
-
 
     }
 
@@ -358,7 +338,8 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
     void testProvisonBadOwner() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME, TEST_LOCATION, TEST_BAD_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_METER_NAME, TEST_LOCATION,
+                    TEST_BAD_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -368,21 +349,18 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
 
-
     }
-
-
 
     @Test
     void testProvisonBadMeterName() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_BAD_METER_NAME, TEST_LOCATION, TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, TEST_BAD_METER_NAME,
+                    TEST_LOCATION, TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -392,11 +370,9 @@ cr = c.callProcedure("SendMessageDownstream", m.getDeviceId(),  TEST_OWNER, m.ge
                 fail(cr.getAppStatusString());
             }
 
-
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
-
 
     }
 

@@ -74,7 +74,7 @@ public class ProvisionDevice extends VoltProcedure {
             return firstRound;
         }
 
-        if (! firstRound[2].advanceRow()) {
+        if (!firstRound[2].advanceRow()) {
             this.setAppStatusCode(ReferenceData.ERROR_UNKNOWN_MODEL);
             this.setAppStatusString("Model not known");
             return firstRound;
