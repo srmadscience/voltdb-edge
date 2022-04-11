@@ -68,7 +68,9 @@ public class BaseMessage implements MessageIFace {
         b.append(delimChar);
         b.append(latencyMs);
         b.append(delimChar);
-        b.append(errorMessage);
+        if (errorMessage != null) {
+            b.append(errorMessage);
+        }
         b.append(delimChar);
         if (createDate != null) {
             b.append(createDate.getTime());
@@ -93,7 +95,13 @@ public class BaseMessage implements MessageIFace {
         externallMessageId = Long.parseLong(internals[2]);
         messageType = internals[3];
         latencyMs = Long.parseLong(internals[4]);
-        errorMessage = internals[5];
+        
+        if (internals[5] != null && internals[5].length() > 0) {
+            errorMessage = internals[5];
+        } else {
+            errorMessage = null;
+        }
+  
         if (internals[6] != null && internals[6].length() > 0) {
             createDate = new Date(Long.parseLong(internals[6]));
         } else {

@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -34,6 +36,7 @@ import org.voltdb.client.ProcCallException;
 import org.voltdb.client.topics.VoltDBKafkaPartitioner;
 import org.voltse.edge.edgeencoders.JsonEncoderImpl;
 import org.voltse.edge.edgeencoders.ModelEncoderIFace;
+import org.voltse.edge.edgeencoders.TabEncoderImpl;
 import org.voltse.edge.edgemessages.EnableFeatureMessage;
 import org.voltse.edge.edgemessages.MessageIFace;
 
@@ -43,11 +46,8 @@ import edgeprocs.ReferenceData;
 
 class TestEndToEndWithKafka {
 
-    private static final String SEGMENT_1_TOPIC = "segment_1_topic";
-    private static final String UPSTREAM_TOPIC = "upstream_1_topic";
-    private static final String DOWNSTREAM_TOPIC = "downstream_1_topic";
-    private static final String POWERCO_1_TOPIC = "powerco_1_topic";
-
+ 
+  
     final long startMs = System.currentTimeMillis();
 
     Consumer<Long, String> kafkaDeviceConsumer;
@@ -59,19 +59,36 @@ class TestEndToEndWithKafka {
     String[] tablesToDelete = { "DEVICES", "device_messages" };
 
     ModelEncoderIFace jsonEncoder = new JsonEncoderImpl();
+    ModelEncoderIFace tabEncoder = new TabEncoderImpl();
+    
+    HashMap<String, ModelEncoderIFace> encoders = new HashMap<String, ModelEncoderIFace>();
+
 
     int nextDeviceId = 100;
 
+    public TestEndToEndWithKafka() {
+        super();
+        encoders.put(jsonEncoder.getName(), jsonEncoder);
+        encoders.put(tabEncoder.getName(), tabEncoder);
+    }
+
+    
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
+        
+ 
+
     }
 
     @AfterAll
     static void tearDownAfterClass() throws Exception {
+
     }
 
     @BeforeEach
     void setUp() throws Exception {
+
+        connectToKafkaConsumerAndProducer();
 
         c = connectVoltDB("localhost");
 
@@ -79,18 +96,41 @@ class TestEndToEndWithKafka {
             c.callProcedure("@AdHoc", "DELETE FROM " + element + ";");
         }
 
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+
+        kafkaDeviceConsumer.unsubscribe();
+        kafkaDeviceConsumer.close();
+        kafkaDeviceConsumer = null;
+
+        kafkaPowercoConsumer.unsubscribe();
+        kafkaPowercoConsumer.close();
+        kafkaPowercoConsumer = null;
+
+        kafkaProducer.flush();
+        kafkaProducer.close();
+        kafkaProducer = null;
+
+        c.drain();
+        c.close();
+        c = null;
+    }
+
+    private void connectToKafkaConsumerAndProducer() throws Exception {
         try {
-            kafkaDeviceConsumer = connectToKafkaConsumer("localhost",
+            kafkaDeviceConsumer = connectToKafkaConsumerEarliest("localhost",
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
-            kafkaDeviceConsumer.subscribe(Collections.singletonList(SEGMENT_1_TOPIC));
+            kafkaDeviceConsumer.subscribe(Collections.singletonList(ReferenceData.SEGMENT_1_TOPIC));
 
-            kafkaPowercoConsumer = connectToKafkaConsumer("localhost",
+            kafkaPowercoConsumer = connectToKafkaConsumerEarliest("10.13.1.106",
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
-            kafkaPowercoConsumer.subscribe(Collections.singletonList(POWERCO_1_TOPIC));
+            kafkaPowercoConsumer.subscribe(Collections.singletonList(ReferenceData.POWERCO_1_TOPIC));
 
         } catch (Exception e) {
             msg(e.getMessage());
@@ -104,22 +144,48 @@ class TestEndToEndWithKafka {
             msg(e.getMessage());
             throw (e);
         }
-
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
+    @Test
+    void testPowerCoStream() {
 
-        c.drain();
-        c.close();
-        c = null;
+        for (int i = 0; i < 10; i++) {
+            msg("round " + i);
 
-        kafkaDeviceConsumer.close();
-        kafkaDeviceConsumer = null;
-        kafkaPowercoConsumer.close();
-        kafkaPowercoConsumer = null;
-        kafkaProducer.close();
-        kafkaProducer = null;
+            long messageId = System.currentTimeMillis();
+
+            try {
+
+                // Create a generic meter
+                long deviceId = testProvison(TestSendDownstreamWithVolt.TEST_OWNER,ReferenceData.TEST_JSON_METER_NAME);
+                long externallMessageId = messageId;
+                long latencyMs = -1;
+                String errorMessage = null;
+                Date createDate = null;
+                int destinationSegmentId = -1;
+                String featureName = "NIGHTSETTING";
+                boolean enabled = true;
+
+                EnableFeatureMessage originalMessage = new EnableFeatureMessage(deviceId, externallMessageId, latencyMs,
+                        errorMessage, createDate, destinationSegmentId, featureName, enabled, 1);
+
+                String serializedMessage = Base64.getEncoder()
+                        .encodeToString(jsonEncoder.encode(originalMessage).getBytes());
+
+                c.callProcedure("powerco_1_stream.INSERT", messageId, 415, 1, serializedMessage);
+
+                EnableFeatureMessage endStateMessage = (EnableFeatureMessage) receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
+                        messageId);
+
+                if (endStateMessage.getExternallMessageId() != messageId) {
+                    fail("messge id mismatch");
+                }
+
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
+
     }
 
     @Test
@@ -131,8 +197,12 @@ class TestEndToEndWithKafka {
 
         try {
 
+            //
+            // Pretend to be a power company requesting a reading
+            //
+
             // Create a generic meter
-            long deviceId = testProvison(TestSendDownstreamWithVolt.TEST_OWNER);
+            long deviceId = testProvison(TestSendDownstreamWithVolt.TEST_OWNER,ReferenceData.TEST_JSON_METER_NAME);
             long externallMessageId = recordId;
             long latencyMs = -1;
             String errorMessage = null;
@@ -152,8 +222,12 @@ class TestEndToEndWithKafka {
 
             checkResponseOK(cr);
 
-            EnableFeatureMessage recoveredMessage = (EnableFeatureMessage) receiveJsonDeviceMessage(SEGMENT_1_TOPIC,
-                    originalMessage.getExternallMessageId());
+            //
+            // Pretend to be a device
+            //
+
+            EnableFeatureMessage recoveredMessage = (EnableFeatureMessage) receiveDeviceMessage(ReferenceData.SEGMENT_1_TOPIC,
+                    originalMessage.getExternallMessageId(), jsonEncoder.getName());
 
             if (recoveredMessage.deviceId != originalMessage.deviceId) {
                 fail("Device id mismatch");
@@ -181,7 +255,15 @@ class TestEndToEndWithKafka {
                 fail("isEnabled mismatch");
             }
 
-            sendJsonMessageUpstream(UPSTREAM_TOPIC, recoveredMessage);
+            //
+            // Send response back to powerco
+            //
+
+            sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, recoveredMessage,jsonEncoder.getName());
+
+            //
+            // Pretend to be powerco
+            //
 
             cr = c.callProcedure("GetDeviceMessage", originalMessage.getDeviceId(),
                     originalMessage.getExternallMessageId());
@@ -203,14 +285,13 @@ class TestEndToEndWithKafka {
     @Test
     void testWithPowerco() {
 
-        final long startMs = System.currentTimeMillis();
-
         final long recordId = System.currentTimeMillis();
 
         try {
 
+
             // Create a generic meter
-            long deviceId = testProvison(TestSendDownstreamWithVolt.TEST_OWNER);
+            long deviceId = testProvison(TestSendDownstreamWithVolt.TEST_OWNER,ReferenceData.TEST_JSON_METER_NAME);
             long externallMessageId = recordId;
             long latencyMs = -1;
             String errorMessage = null;
@@ -219,62 +300,136 @@ class TestEndToEndWithKafka {
             String featureName = "NIGHTSETTING";
             boolean enabled = true;
 
+            //
+            // Pretend to be powerco
+            //
+
             EnableFeatureMessage originalMessage = new EnableFeatureMessage(deviceId, externallMessageId, latencyMs,
                     errorMessage, createDate, destinationSegmentId, featureName, enabled, 1);
 
-            sendJsonMessageDownstream(DOWNSTREAM_TOPIC, TestSendDownstreamWithVolt.TEST_OWNER, originalMessage);
+            sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, TestSendDownstreamWithVolt.TEST_OWNER, originalMessage, jsonEncoder.getName());
 
-            EnableFeatureMessage recoveredMessage = (EnableFeatureMessage) receiveJsonDeviceMessage(SEGMENT_1_TOPIC,
+            //
+            // Pretend to be a meter
+            //
+
+            EnableFeatureMessage recoveredMessage = (EnableFeatureMessage) receiveDeviceMessage(ReferenceData.SEGMENT_1_TOPIC,
+                    originalMessage.getExternallMessageId(),jsonEncoder.getName());
+
+            compareOriginalAndAcceptedEnableFeatureMessages(originalMessage, recoveredMessage);
+
+            sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, recoveredMessage, jsonEncoder.getName());
+
+            //
+            // Pretend to be powerco
+            //
+
+            tearDown();
+            setUp();
+
+            EnableFeatureMessage endStateMessage = (EnableFeatureMessage) receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
                     originalMessage.getExternallMessageId());
 
-            if (recoveredMessage.deviceId != originalMessage.deviceId) {
-                fail("Device id mismatch");
-            }
-
-            if (recoveredMessage.latencyMs != -1) {
-                fail("latencyMs set");
-            }
-
-            latencyMs = System.currentTimeMillis() - startMs;
-
-            if (recoveredMessage.errorMessage != null) {
-                fail("errorMessage set");
-            }
-
-            if (recoveredMessage.destinationSegmentId == -1) {
-                fail("destinationSegmentId id mismatch");
-            }
-
-            if (!recoveredMessage.featureName.equals(featureName)) {
-                fail("featureName mismatch");
-            }
-
-            if (!recoveredMessage.isEnabled()) {
-                fail("isEnabled mismatch");
-            }
-
-            sendJsonMessageUpstream(UPSTREAM_TOPIC, recoveredMessage);
-
-            // TODO
-//            EnableFeatureMessage endStateMessage = (EnableFeatureMessage)  receiveJsonPowercoMessage(POWERCO_1_TOPIC,
-//                    originalMessage.getExternallMessageId());
-//
-
-            ClientResponse cr = c.callProcedure("GetDeviceMessage", originalMessage.getDeviceId(),
-                    originalMessage.getExternallMessageId());
-
-            cr.getResults()[0].advanceRow();
-            String statusCode = cr.getResults()[0].getString("STATUS_CODE");
-
-            if (!statusCode.equals(ReferenceData.MESSAGE_DONE + "")) {
-                fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + statusCode);
+            if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
+                fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
 
             }
 
         } catch (Exception e) {
+            msg(e.getMessage());
             fail(e);
         }
 
+    }
+
+    @Test
+    void testWithPowercoAndTabDelim() {
+
+        final long recordId = System.currentTimeMillis();
+
+        try {
+
+
+            // Create a generic meter
+            long deviceId = testProvison(TestSendDownstreamWithVolt.TEST_OWNER,ReferenceData.TEST_DELIM_METER_NAME);
+            long externallMessageId = recordId;
+            long latencyMs = -1;
+            String errorMessage = null;
+            Date createDate = null;
+            int destinationSegmentId = -1;
+            String featureName = "NIGHTSETTING";
+            boolean enabled = true;
+
+            //
+            // Pretend to be powerco
+            //
+
+            EnableFeatureMessage originalMessage = new EnableFeatureMessage(deviceId, externallMessageId, latencyMs,
+                    errorMessage, createDate, destinationSegmentId, featureName, enabled, 1);
+
+            sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, TestSendDownstreamWithVolt.TEST_OWNER, originalMessage, jsonEncoder.getName());
+
+            //
+            // Pretend to be a meter
+            //
+
+            EnableFeatureMessage recoveredMessage = (EnableFeatureMessage) receiveDeviceMessage(ReferenceData.SEGMENT_1_TOPIC,
+                    originalMessage.getExternallMessageId(),tabEncoder.getName());
+
+            compareOriginalAndAcceptedEnableFeatureMessages(originalMessage, recoveredMessage);
+
+            sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, recoveredMessage, tabEncoder.getName());
+
+            //
+            // Pretend to be powerco
+            //
+
+            tearDown();
+            setUp();
+
+            EnableFeatureMessage endStateMessage = (EnableFeatureMessage) receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
+                    originalMessage.getExternallMessageId());
+
+            if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
+                fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+
+            }
+
+        } catch (Exception e) {
+            msg(e.getMessage());
+            fail(e);
+        }
+
+    }
+    private void compareOriginalAndAcceptedEnableFeatureMessages(EnableFeatureMessage originalMessage,
+            EnableFeatureMessage recoveredMessage) {
+        if (recoveredMessage.deviceId != originalMessage.deviceId) {
+            fail("Device id mismatch");
+        }
+
+        if (recoveredMessage.getCreateDate() == null) {
+            fail("Create Date is null");
+        }
+
+        if (recoveredMessage.latencyMs != -1) {
+            fail("latencyMs set");
+        }
+
+        if (recoveredMessage.errorMessage != null) {
+            fail("errorMessage set");
+        }
+
+        if (recoveredMessage.destinationSegmentId == -1) {
+            fail("destinationSegmentId id mismatch");
+        }
+
+        if (!recoveredMessage.featureName.equals(originalMessage.featureName)) {
+            fail("featureName mismatch");
+        }
+
+        if (!recoveredMessage.isEnabled()) {
+            fail("isEnabled mismatch");
+        }
     }
 
     private void checkResponseOK(ClientResponse cr) {
@@ -287,9 +442,11 @@ class TestEndToEndWithKafka {
         }
     }
 
-    private void sendJsonMessageDownstream(String topicname, long testOwner, MessageIFace message) throws Exception {
+    private void sendMessageDownstream(String topicname, long testOwner, MessageIFace message, String encoderName) throws Exception {
+        
+        ModelEncoderIFace ourEncoder = encoders.get(encoderName);
 
-        String encodedMessage = jsonEncoder.encode(message);
+        String encodedMessage = ourEncoder.encode(message);
 
         String payload = message.getDeviceId() + "," + testOwner + ","
                 + Base64.getEncoder().encodeToString(encodedMessage.getBytes());
@@ -299,10 +456,12 @@ class TestEndToEndWithKafka {
 
     }
 
-    private void sendJsonMessageUpstream(String topicname, MessageIFace message) throws Exception {
+    private void sendMessageUpstream(String topicname, MessageIFace message, String encoderName) throws Exception {
 
         try {
-            String encodedMessage = jsonEncoder.encode(message);
+            ModelEncoderIFace ourEncoder = encoders.get(encoderName);
+
+            String encodedMessage = ourEncoder.encode(message);
 
             String payload = message.getDeviceId() + ","
                     + Base64.getEncoder().encodeToString(encodedMessage.getBytes());
@@ -311,14 +470,15 @@ class TestEndToEndWithKafka {
             kafkaProducer.send(record).get();
 
         } catch (Exception e) {
-            fail("sendJsonMessageUpstream:" + e.getMessage());
+            fail("sendMessageUpstream:" + e.getMessage());
         }
 
     }
 
-    private MessageIFace receiveJsonDeviceMessage(String topic, long externalMessageId) throws Exception {
+    private MessageIFace receiveDeviceMessage(String topic, long externalMessageId, String encoderName) throws Exception {
 
-        ConsumerRecord<Long, String> ourRecord = getNextDeviceRecord(topic);
+        ModelEncoderIFace ourEncoder = encoders.get(encoderName);
+        ConsumerRecord<Long, String> ourRecord = getNextDeviceRecord(topic, externalMessageId);
 
         if (ourRecord == null) {
             fail("receiveJsonMessage == null");
@@ -328,7 +488,7 @@ class TestEndToEndWithKafka {
 
         recordAsCSV[2] = new String(Base64.getDecoder().decode(recordAsCSV[2].getBytes()));
 
-        MessageIFace record = jsonEncoder.decode(recordAsCSV[2]);
+        MessageIFace record = ourEncoder.decode(recordAsCSV[2]);
 
         if (ourRecord.key() != record.getExternallMessageId()) {
             fail("Right record not found, " + ourRecord.key() + " != " + record.getExternallMessageId());
@@ -344,7 +504,7 @@ class TestEndToEndWithKafka {
 
     private MessageIFace receiveJsonPowercoMessage(String topic, long externalMessageId) throws Exception {
 
-        ConsumerRecord<Long, String> ourRecord = getNextPowercoRecord(topic);
+        ConsumerRecord<Long, String> ourRecord = getNextPowercoRecord(topic, externalMessageId);
 
         if (ourRecord == null) {
             fail("receiveJsonMessage == null");
@@ -352,9 +512,9 @@ class TestEndToEndWithKafka {
 
         String[] recordAsCSV = ourRecord.value().split(",");
 
-        recordAsCSV[2] = new String(Base64.getDecoder().decode(recordAsCSV[2].getBytes()));
+        recordAsCSV[3] = new String(Base64.getDecoder().decode(recordAsCSV[3].getBytes()));
 
-        MessageIFace record = jsonEncoder.decode(recordAsCSV[2]);
+        MessageIFace record = jsonEncoder.decode(recordAsCSV[3]);
 
         if (ourRecord.key() != record.getExternallMessageId()) {
             fail("Right record not found, " + ourRecord.key() + " != " + record.getExternallMessageId());
@@ -368,58 +528,70 @@ class TestEndToEndWithKafka {
 
     }
 
-    private ConsumerRecord<Long, String> getNextDeviceRecord(String topic) {
+    private ConsumerRecord<Long, String> getNextDeviceRecord(String topic, long messageId) {
 
         final ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(5000);
 
         Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
 
-        if (i.hasNext()) {
+        while (i.hasNext()) {
             ConsumerRecord<Long, String> aRecord = i.next();
-            return aRecord;
+
+            if (aRecord.key() == messageId) {
+                msg("OK:" + aRecord.toString());
+                msg("took " + (System.currentTimeMillis() - startMs) + " ms");
+                return aRecord;
+            } else {
+                msg(aRecord.toString());
+            }
 
         }
 
         return null;
     }
 
-    private ConsumerRecord<Long, String> getNextPowercoRecord(String topic) {
+    private ConsumerRecord<Long, String> getNextPowercoRecord(String topic, long messageId) {
 
-        final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(10000);
+        long startMs = System.currentTimeMillis();
 
-        Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
+        for (int j = 0; j < 30000; j++) {
 
-        if (i.hasNext()) {
-            ConsumerRecord<Long, String> aRecord = i.next();
-            return aRecord;
+            long startPoll = System.currentTimeMillis();
+            final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(10));
+
+            if (startPoll + 30 < System.currentTimeMillis()) {
+                msg("took " + (System.currentTimeMillis() - startPoll));
+            }
+
+            Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
+
+            while (i.hasNext()) {
+                ConsumerRecord<Long, String> aRecord = i.next();
+
+                if (aRecord.key() == messageId) {
+                    msg("OK:" + aRecord.toString());
+                    msg("took " + (System.currentTimeMillis() - startMs) + " ms");
+                    return aRecord;
+                } else {
+                    msg(aRecord.toString());
+                }
+
+            }
 
         }
-
+        msg("FAILED and took " + (System.currentTimeMillis() - startMs) + " ms");
         return null;
     }
 
-    private int drainTopic(String topic) {
+    
 
-        int howMany = 0;
-
-        final ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(10000);
-
-        howMany = consumerRecords.count();
-
-        if (howMany > 0) {
-            msg("Drained " + howMany + " records");
-        }
-
-        return howMany;
-    }
-
-    long testProvison(long powerCo) {
+    long testProvison(long powerCo, String deviceName) {
 
         nextDeviceId++;
 
         try {
             ClientResponse cr = c.callProcedure("ProvisionDevice", nextDeviceId,
-                    TestSendDownstreamWithVolt.TEST_METER_NAME, TestSendDownstreamWithVolt.TEST_LOCATION, powerCo);
+                    deviceName, TestSendDownstreamWithVolt.TEST_LOCATION, powerCo);
 
             checkResponseOK(cr);
 
@@ -452,13 +624,52 @@ class TestEndToEndWithKafka {
         props.put("batch.size", 16384);
         props.put("linger.ms", 1);
         props.put("buffer.memory", 33554432);
-//        props.put("key.deserializer", keyDeserializer);
-//        props.put("value.deserializer", keyDeserializer);
+        props.put("auto.commit", true);
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
         // props.put("auto.offset.reset","earliest");
+
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + startMs);
+        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
+
+        Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
+
+        msg("Connected to VoltDB via Kafka");
+
+        return newConsumer;
+
+    }
+
+    private Consumer<Long, String> connectToKafkaConsumerEarliest(String commaDelimitedHostnames,
+            String keyDeserializer, String valueSerializer) throws Exception {
+
+        String[] hostnameArray = commaDelimitedHostnames.split(",");
+
+        StringBuffer kafkaBrokers = new StringBuffer();
+        for (int i = 0; i < hostnameArray.length; i++) {
+            kafkaBrokers.append(hostnameArray[i]);
+            kafkaBrokers.append(":9092");
+
+            if (i < (hostnameArray.length - 1)) {
+                kafkaBrokers.append(',');
+            }
+        }
+
+        Properties props = new Properties();
+        props.put("bootstrap.servers", kafkaBrokers.toString());
+        props.put("acks", "all");
+        props.put("retries", 0);
+        props.put("batch.size", 16384);
+        props.put("linger.ms", 1);
+        props.put("buffer.memory", 33554432);
+        props.put("auto.commit", true);
+
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+
+        props.put("auto.offset.reset", "earliest");
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + startMs);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());

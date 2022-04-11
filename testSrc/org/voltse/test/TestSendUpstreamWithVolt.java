@@ -76,7 +76,7 @@ class TestSendUpstreamWithVolt {
         }
 
     }
-
+    
     @Test
     void testUpstreamBuf() {
 
@@ -257,7 +257,7 @@ class TestSendUpstreamWithVolt {
 
         try {
             ClientResponse cr = c.callProcedure("ProvisionDevice", TestSendDownstreamWithVolt.GENERIC_DEVICE_ID,
-                    TestSendDownstreamWithVolt.TEST_METER_NAME, TestSendDownstreamWithVolt.TEST_LOCATION,
+                    ReferenceData.TEST_JSON_METER_NAME, TestSendDownstreamWithVolt.TEST_LOCATION,
                     TestSendDownstreamWithVolt.TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {

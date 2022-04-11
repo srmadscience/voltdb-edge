@@ -73,5 +73,7 @@ public interface MessageIFace {
     public void setDestinationSegmentId(int destinationSegmentId);
 
     public void setCallingOwner(long callingOwner);
+    
+    public void setErrorMessage(String errorMessage);
 
 }

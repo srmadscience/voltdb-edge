@@ -7,6 +7,8 @@ import edgeprocs.ReferenceData;
 
 public class TabEncoderImpl implements ModelEncoderIFace {
 
+    public static final String NAME = "TAB"; 
+
     @Override
     public String encode(MessageIFace m) throws Exception {
         return m.asDelimited(ReferenceData.DELIM_CHAR).toString();
@@ -25,5 +27,11 @@ public class TabEncoderImpl implements ModelEncoderIFace {
         return mi;
 
     }
+    
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
 
 }

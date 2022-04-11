@@ -1,5 +1,10 @@
 package edgeprocs;
 
+import org.voltse.edge.edgeencoders.JsonEncoderImpl;
+import org.voltse.edge.edgeencoders.TabEncoderImpl;
+import org.voltse.edge.edgemessages.EnableFeatureMessage;
+import org.voltse.edge.edgemessages.MessageIFace;
+
 /* This file is part of VoltDB.
  * Copyright (C) 2008-2020 VoltDB Inc.
  *
@@ -28,6 +33,10 @@ package edgeprocs;
  *
  */
 public class ReferenceData {
+    
+    public final static String TEST_JSON_METER_NAME = "MeterTron100";
+    public final static String TEST_DELIM_METER_NAME = "HomeMeter100";
+
 
     public static final String EDGEMESSAGES = "org.voltse.edge.edgemessages.";
     public static final String EDGEENCODERS = "org.voltse.edge.edgeencoders.";
@@ -58,5 +67,26 @@ public class ReferenceData {
     public static final byte ERROR_MESSAGE_NOT_IN_FLIGHT_IS_ACTIVE = 19;
     public static final byte MESSAGE_DONE = 20;
     public static final byte ERROR_INVALID_SEGMENT_ID = 21;
+    
+    public static final String SEGMENT_1_TOPIC = "segment_1_topic";
+    public static final String UPSTREAM_TOPIC = "upstream_1_topic";
+    public static final String DOWNSTREAM_TOPIC = "downstream_1_topic";
+    public static final String POWERCO_1_TOPIC = "powerco_1_topic";
+    
+    public static String getdeviceEncoding(MessageIFace theMessage) {
+        
+       return getdeviceEncoding(theMessage.getDeviceId());
+    }
+
+    
+ public static String getdeviceEncoding(long deviceId) {
+        
+        if (deviceId % 2 == 0) {
+            
+            return TabEncoderImpl.NAME;
+        }
+
+        return JsonEncoderImpl.NAME;
+    }
 
 }

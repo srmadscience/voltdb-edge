@@ -88,55 +88,40 @@ public class SendMessageUpstream extends VoltProcedure {
 
         VoltTable[] firstRound = voltExecuteSQL();
 
-        if (!firstRound[0].advanceRow()) {
+        VoltTable thisDeviceTable = firstRound[0];
+        if (!thisDeviceTable.advanceRow()) {
 
             reportError(this.getUniqueId(), ReferenceData.ERROR_UNKNOWN_DEVICE, deviceId, "SendMessageUpstream",
                     serializedMessage);
             return null;
         }
 
-        VoltTable thisDeviceTable = firstRound[0];
-
-        if (!firstRound[1].advanceRow()) {
+        VoltTable thisLocationTable = firstRound[1];
+        if (!thisLocationTable.advanceRow()) {
 
             reportError(this.getUniqueId(), ReferenceData.ERROR_UNKNOWN_LOCATION, deviceId, "SendMessageUpstream",
                     serializedMessage);
             return null;
         }
 
-        VoltTable thisLocationTable = firstRound[1];
+        VoltTable thisModelTable = firstRound[2];
 
-        if (!firstRound[2].advanceRow()) {
+        if (!thisModelTable.advanceRow()) {
 
             reportError(this.getUniqueId(), ReferenceData.ERROR_UNKNOWN_MODEL, deviceId, "SendMessageUpstream",
                     serializedMessage);
             return null;
         }
 
-        VoltTable thisModelTable = firstRound[2];
-
         String modelEncoderClassName = thisModelTable.getString("encoder_class_name");
 
         String modelNumber = thisDeviceTable.getString("model_number");
-        long locationid = thisDeviceTable.getLong("location_id");
         int currentOwnerId = (int) thisDeviceTable.getLong("current_owner_id");
-        TimestampType lastFirmWareUpdate = thisDeviceTable.getTimestampAsTimestamp("last_firmware_update");
 
-        // Do any needed translations
-        ModelEncoderIFace ourEncoder = encoders.get(modelNumber);
+        ModelEncoderIFace ourEncoder = getEncoder(deviceId, modelEncoderClassName, modelNumber);
 
         if (ourEncoder == null) {
-
-            try {
-                ourEncoder = (ModelEncoderIFace) Class.forName(modelEncoderClassName).newInstance();
-
-            } catch (Exception e) {
-                reportError(this.getUniqueId(), ReferenceData.ERROR_ENCODER_OBJECT_CLASS_NOT_FOUND, deviceId,
-                        "SendMessageUpstream", e.getMessage());
-                return null;
-            }
-
-            encoders.put(modelNumber, ourEncoder);
+            return null;
         }
 
         // Deserialize message
@@ -217,14 +202,36 @@ public class SendMessageUpstream extends VoltProcedure {
             return null;
         }
 
+        ourMessage.setErrorMessage(ReferenceData.MESSAGE_DONE + "");
         voltQueueSQL(updateMessageStatus, ReferenceData.MESSAGE_DONE, deviceId, ourMessage.getExternallMessageId());
 
         String encodedMessage = Base64.getEncoder().encodeToString(ourMessage.asJson(g).getBytes());
+
         voltQueueSQL(upstreamInserts[currentOwnerId], ourMessage.getExternallMessageId(), deviceId, currentOwnerId,
                 encodedMessage);
 
         voltExecuteSQL();
         return null;
+    }
+
+    private ModelEncoderIFace getEncoder(long deviceId, String modelEncoderClassName, String modelNumber) {
+        // Do any needed translations
+        ModelEncoderIFace ourEncoder = encoders.get(modelNumber);
+
+        if (ourEncoder == null) {
+
+            try {
+                ourEncoder = (ModelEncoderIFace) Class.forName(modelEncoderClassName).newInstance();
+
+            } catch (Exception e) {
+                reportError(this.getUniqueId(), ReferenceData.ERROR_ENCODER_OBJECT_CLASS_NOT_FOUND, deviceId,
+                        "SendMessageUpstream", e.getMessage());
+                return null;
+            }
+
+            encoders.put(modelNumber, ourEncoder);
+        }
+        return ourEncoder;
     }
 
     private void reportError(long messageId, byte errorCode, long deviceId, String action, String payload) {
@@ -233,7 +240,7 @@ public class SendMessageUpstream extends VoltProcedure {
 
         this.setAppStatusCode(errorCode);
         this.setAppStatusString(errorCode + ":" + deviceId + ":" + action + ":" + payload);
-        LOG.error(errorCode + ":" + deviceId + ":" + action + ":" + payload);
+        LOG.error(errorCode + ":" + messageId + ":" + deviceId + ":" + action + ":" + payload);
         voltExecuteSQL();
 
     }

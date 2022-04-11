@@ -191,9 +191,7 @@ public class SendMessageDownstream extends VoltProcedure {
         String modelEncoderClassName = thisModelTable.getString("encoder_class_name");
 
         String modelNumber = thisDeviceTable.getString("model_number");
-        long locationid = thisDeviceTable.getLong("location_id");
         long currentOwnerId = thisDeviceTable.getLong("current_owner_id");
-        TimestampType lastFirmWareUpdate = thisDeviceTable.getTimestampAsTimestamp("last_firmware_update");
 
         if (callingOwner != currentOwnerId) {
             reportError(thisTxId, ReferenceData.ERROR_NOT_YOUR_DEVICE, deviceId, ourMessage.getMessageType(),

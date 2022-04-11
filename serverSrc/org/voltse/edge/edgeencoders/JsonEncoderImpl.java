@@ -6,6 +6,8 @@ import org.voltse.edge.edgemessages.MessageIFace;
 import com.google.gson.Gson;
 
 public class JsonEncoderImpl implements ModelEncoderIFace {
+    
+    public static final String NAME = "JSON"; 
 
     Gson g = new Gson();
 
@@ -18,6 +20,11 @@ public class JsonEncoderImpl implements ModelEncoderIFace {
     public MessageIFace decode(String s) throws Exception {
 
         return (MessageIFace) BaseMessage.fromJson(s, g);
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
 }

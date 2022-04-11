@@ -64,7 +64,7 @@ PARTITION ON COLUMN device_id
 CREATE STREAM powerco_1_stream
 PARTITION ON COLUMN device_id 
   EXPORT TO TOPIC powerco_1_topic
-  WITH KEY (message_id) VALUE (message_id,device_id,payload,util_id)
+  WITH KEY (message_id) VALUE (message_id,device_id,util_id,payload)
 (message_id bigint not null
 ,device_id bigint not null 
 ,util_id bigint not null
@@ -73,7 +73,7 @@ PARTITION ON COLUMN device_id
 CREATE STREAM powerco_0_stream
 PARTITION ON COLUMN device_id 
   EXPORT TO TOPIC powerco_0_topic
-  WITH KEY (message_id) VALUE (message_id,device_id,payload,util_id)
+  WITH KEY (message_id) VALUE (message_id,device_id,util_id,payload)
 (message_id bigint not null
 ,device_id bigint not null 
 ,util_id bigint not null
