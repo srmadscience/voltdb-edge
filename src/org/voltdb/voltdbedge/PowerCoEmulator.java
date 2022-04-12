@@ -54,6 +54,7 @@ public class PowerCoEmulator {
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
             kafkaPowercoConsumer.subscribe(Collections.singletonList(ReferenceData.POWERCO_1_TOPIC));
+            kafkaPowercoConsumer.commitSync();
 
         } catch (Exception e) {
             msg(e.getMessage());
@@ -115,13 +116,13 @@ public class PowerCoEmulator {
 
         long startMs = System.currentTimeMillis();
 
-        for (int j = 0; j < 30000; j++) {
+        for (int j = 0; j < 3; j++) {
 
             long startPoll = System.currentTimeMillis();
-            final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(10));
+            final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(10000));
 
             if (startPoll + 30 < System.currentTimeMillis()) {
-                msg("took " + (System.currentTimeMillis() - startPoll));
+                msg(j+ ": took " + (System.currentTimeMillis() - startPoll));
             }
 
             Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
@@ -131,7 +132,7 @@ public class PowerCoEmulator {
 
                 if (aRecord.key() == messageId) {
                     msg("OK:" + aRecord.toString());
-                    msg("took " + (System.currentTimeMillis() - startMs) + " ms");
+                    msg("pass=  "+j+ " took " + (System.currentTimeMillis() - startMs) + " ms");
                     return aRecord;
                 } else {
                     msg(aRecord.toString());
@@ -161,11 +162,6 @@ public class PowerCoEmulator {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", kafkaBrokers.toString());
-        props.put("acks", "all");
-        props.put("retries", 0);
-        props.put("batch.size", 16384);
-        props.put("linger.ms", 1);
-        props.put("buffer.memory", 33554432);
         props.put("auto.commit", true);
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
@@ -252,15 +248,15 @@ public class PowerCoEmulator {
 
     public void flush() {
  
-        kafkaPowercoConsumer.unsubscribe();
-        kafkaPowercoConsumer.close();
-        kafkaPowercoConsumer = null;
-
-        kafkaProducer.flush();
-        kafkaProducer.close();
-        kafkaProducer = null;
-        
-        connectToKafkaConsumerAndProducer();
+//        kafkaPowercoConsumer.unsubscribe();
+//        kafkaPowercoConsumer.close();
+//        kafkaPowercoConsumer = null;
+//
+//        kafkaProducer.flush();
+//        kafkaProducer.close();
+//        kafkaProducer = null;
+//        
+//        connectToKafkaConsumerAndProducer();
        
     }
 

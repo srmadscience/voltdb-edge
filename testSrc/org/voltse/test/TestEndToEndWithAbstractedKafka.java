@@ -83,10 +83,15 @@ class TestEndToEndWithAbstractedKafka {
         c.close();
         c = null;
     }
-
+    @Test
+    void smokeTestMany() {
+    for (int i=0; i < 10; i++) {
+        smokeTest();
+    }
+    }
 
     @Test
-    void testWithPowerco() {
+    void smokeTest() {
 
         final long recordId = System.currentTimeMillis();
 
@@ -131,8 +136,8 @@ class TestEndToEndWithAbstractedKafka {
             // Pretend to be powerco
             //
 
-            d.flush();
-            p.flush();
+           // d.flush();
+           // p.flush();
 
             EnableFeatureMessage endStateMessage = (EnableFeatureMessage) p.receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
                     originalMessage.getExternallMessageId());
@@ -150,7 +155,7 @@ class TestEndToEndWithAbstractedKafka {
     }
 
     @Test
-    void testWithPowercoAndTabDelim() {
+    void testWithTabDelim() {
 
         final long recordId = System.currentTimeMillis();
 
@@ -191,8 +196,8 @@ class TestEndToEndWithAbstractedKafka {
             // Pretend to be powerco
             //
 
-            d.flush();
-            p.flush();
+//            d.flush();
+//            p.flush();
 
             EnableFeatureMessage endStateMessage = (EnableFeatureMessage) p.receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
                     originalMessage.getExternallMessageId());

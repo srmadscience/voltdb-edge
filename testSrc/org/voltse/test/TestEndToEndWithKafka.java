@@ -48,7 +48,7 @@ class TestEndToEndWithKafka {
 
  
   
-    final long startMs = System.currentTimeMillis();
+     long startMs = System.currentTimeMillis();
 
     Consumer<Long, String> kafkaDeviceConsumer;
     Consumer<Long, String> kafkaPowercoConsumer;
@@ -70,6 +70,13 @@ class TestEndToEndWithKafka {
         super();
         encoders.put(jsonEncoder.getName(), jsonEncoder);
         encoders.put(tabEncoder.getName(), tabEncoder);
+        try {
+            connectToKafkaConsumerAndProducer();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     
@@ -88,7 +95,6 @@ class TestEndToEndWithKafka {
     @BeforeEach
     void setUp() throws Exception {
 
-        connectToKafkaConsumerAndProducer();
 
         c = connectVoltDB("localhost");
 
@@ -101,17 +107,6 @@ class TestEndToEndWithKafka {
     @AfterEach
     void tearDown() throws Exception {
 
-        kafkaDeviceConsumer.unsubscribe();
-        kafkaDeviceConsumer.close();
-        kafkaDeviceConsumer = null;
-
-        kafkaPowercoConsumer.unsubscribe();
-        kafkaPowercoConsumer.close();
-        kafkaPowercoConsumer = null;
-
-        kafkaProducer.flush();
-        kafkaProducer.close();
-        kafkaProducer = null;
 
         c.drain();
         c.close();
@@ -120,7 +115,7 @@ class TestEndToEndWithKafka {
 
     private void connectToKafkaConsumerAndProducer() throws Exception {
         try {
-            kafkaDeviceConsumer = connectToKafkaConsumerEarliest("localhost",
+            kafkaDeviceConsumer = connectToKafkaConsumerEarliest("10.13.1.106",
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -131,6 +126,8 @@ class TestEndToEndWithKafka {
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
             kafkaPowercoConsumer.subscribe(Collections.singletonList(ReferenceData.POWERCO_1_TOPIC));
+            kafkaPowercoConsumer.commitSync();
+            
 
         } catch (Exception e) {
             msg(e.getMessage());
@@ -324,8 +321,8 @@ class TestEndToEndWithKafka {
             // Pretend to be powerco
             //
 
-            tearDown();
-            setUp();
+//            tearDown();
+//            setUp();
 
             EnableFeatureMessage endStateMessage = (EnableFeatureMessage) receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
                     originalMessage.getExternallMessageId());
@@ -383,9 +380,6 @@ class TestEndToEndWithKafka {
             //
             // Pretend to be powerco
             //
-
-            tearDown();
-            setUp();
 
             EnableFeatureMessage endStateMessage = (EnableFeatureMessage) receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
                     originalMessage.getExternallMessageId());
@@ -530,7 +524,8 @@ class TestEndToEndWithKafka {
 
     private ConsumerRecord<Long, String> getNextDeviceRecord(String topic, long messageId) {
 
-        final ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(5000);
+        final ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(60000);
+        //kafkaDeviceConsumer.commitSync();
 
         Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
 
@@ -554,13 +549,13 @@ class TestEndToEndWithKafka {
 
         long startMs = System.currentTimeMillis();
 
-        for (int j = 0; j < 30000; j++) {
+        for (int j = 0; j < 3; j++) {
 
             long startPoll = System.currentTimeMillis();
-            final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(10));
+            final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(10000));
 
             if (startPoll + 30 < System.currentTimeMillis()) {
-                msg("took " + (System.currentTimeMillis() - startPoll));
+                msg(j+ ": took " + (System.currentTimeMillis() - startPoll));
             }
 
             Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
@@ -570,7 +565,7 @@ class TestEndToEndWithKafka {
 
                 if (aRecord.key() == messageId) {
                     msg("OK:" + aRecord.toString());
-                    msg("took " + (System.currentTimeMillis() - startMs) + " ms");
+                    msg("pass=  "+j+ " took " + (System.currentTimeMillis() - startMs) + " ms");
                     return aRecord;
                 } else {
                     msg(aRecord.toString());
@@ -582,7 +577,6 @@ class TestEndToEndWithKafka {
         msg("FAILED and took " + (System.currentTimeMillis() - startMs) + " ms");
         return null;
     }
-
     
 
     long testProvison(long powerCo, String deviceName) {
@@ -629,7 +623,7 @@ class TestEndToEndWithKafka {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-        // props.put("auto.offset.reset","earliest");
+       props.put("auto.offset.reset","earliest");
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + startMs);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
@@ -659,17 +653,12 @@ class TestEndToEndWithKafka {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", kafkaBrokers.toString());
-        props.put("acks", "all");
-        props.put("retries", 0);
-        props.put("batch.size", 16384);
-        props.put("linger.ms", 1);
-        props.put("buffer.memory", 33554432);
         props.put("auto.commit", true);
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-        props.put("auto.offset.reset", "earliest");
+      props.put("auto.offset.reset", "earliest");
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + startMs);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
@@ -716,6 +705,23 @@ class TestEndToEndWithKafka {
 
     }
 
+    public void finalize () {
+        
+        kafkaDeviceConsumer.commitSync();
+        kafkaDeviceConsumer.unsubscribe();
+        kafkaDeviceConsumer.close();
+        kafkaDeviceConsumer = null;
+
+        kafkaPowercoConsumer.commitSync();
+        kafkaPowercoConsumer.unsubscribe();
+        kafkaPowercoConsumer.close();
+        kafkaPowercoConsumer = null;
+
+        kafkaProducer.flush();
+        kafkaProducer.close();
+        kafkaProducer = null;
+
+    }
     private static Client connectVoltDB(String commaDelimitedHostnames) throws Exception {
         Client client = null;
         ClientConfig config = null;

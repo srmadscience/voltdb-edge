@@ -3,6 +3,7 @@ package org.voltdb.voltdbedge;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
@@ -61,6 +62,7 @@ public class DeviceEmulator {
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
             kafkaDeviceConsumer.subscribe(Collections.singletonList(ReferenceData.SEGMENT_1_TOPIC));
+           // kafkaDeviceConsumer.commitSync();
 
  
         } catch (Exception e) {
@@ -81,6 +83,7 @@ public class DeviceEmulator {
 
         ModelEncoderIFace ourEncoder = encoders.get(encoderName);
         ConsumerRecord<Long, String> ourRecord = getNextDeviceRecord(topic, externalMessageId);
+        
 
         if (ourRecord == null) {
             fail("receiveJsonMessage == null");
@@ -105,7 +108,10 @@ public class DeviceEmulator {
     
     private ConsumerRecord<Long, String> getNextDeviceRecord(String topic, long messageId) {
 
-        final ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(5000);
+        
+       
+        ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(Duration.ofMillis(6000));
+       
 
         Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
 
@@ -120,8 +126,8 @@ public class DeviceEmulator {
                 msg(aRecord.toString());
             }
 
+        
         }
-
         return null;
     }
 
@@ -145,15 +151,16 @@ public class DeviceEmulator {
     }
 
     public void flush() {
-        kafkaDeviceConsumer.unsubscribe();
-        kafkaDeviceConsumer.close();
-        kafkaDeviceConsumer = null;
-
-        kafkaProducer.flush();
-        kafkaProducer.close();
-        kafkaProducer = null;
-        
-        connectToKafkaConsumerAndProducer();
+//        //kafkaDeviceConsumer.commitSync();
+//        kafkaDeviceConsumer.unsubscribe();
+//        kafkaDeviceConsumer.close();
+//        kafkaDeviceConsumer = null;
+//
+//        kafkaProducer.flush();
+//        kafkaProducer.close();
+//        kafkaProducer = null;
+//        
+//        connectToKafkaConsumerAndProducer();
     }
     
     private Consumer<Long, String> connectToKafkaConsumerEarliest(String commaDelimitedHostnames,
@@ -173,22 +180,23 @@ public class DeviceEmulator {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", kafkaBrokers.toString());
-        props.put("acks", "all");
-        props.put("retries", 0);
-        props.put("batch.size", 16384);
-        props.put("linger.ms", 1);
-        props.put("buffer.memory", 33554432);
+//        props.put("acks", "all");
+//        props.put("retries", 0);
+//        props.put("batch.size", 16384);
+//        props.put("linger.ms", 1);
+//         props.put("buffer.memory", 33554432);
         props.put("auto.commit", true);
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-        props.put("auto.offset.reset", "earliest");
+       props.put("auto.offset.reset", "earliest");
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + startMs);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
 
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
+        newConsumer.commitSync();
 
         msg("Connected to VoltDB via Kafka");
 
