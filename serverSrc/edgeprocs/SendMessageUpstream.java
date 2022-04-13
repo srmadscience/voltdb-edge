@@ -67,6 +67,12 @@ public class SendMessageUpstream extends VoltProcedure {
     public static final SQLStmt reportError  = new SQLStmt("INSERT INTO error_stream "
             + "(message_id,device_id,error_code,event_kind,payload) "
             + "VALUES (?,?,?,?,?);");
+    
+    public static final SQLStmt createDeviceMessage = new SQLStmt(
+            "INSERT INTO device_messages(device_id, message_date, message_id, internal_message_id,status_code) "
+            + "VALUES "
+            + "(?,NOW,?,?,?);");
+
 
 
 	// @formatter:on
@@ -154,17 +160,6 @@ public class SendMessageUpstream extends VoltProcedure {
             return null;
         }
 
-        if (ourMessage.getExternallMessageId() <= 0) {
-            reportError(this.getUniqueId(), ReferenceData.ERROR_MISSING_EXTERNAL_MESSAGE_ID, deviceId,
-                    ourMessage.getMessageType(), serializedMessage);
-            return null;
-        }
-
-        if (ourMessage.getInternalMessageId() <= 0) {
-            reportError(ourMessage.getExternallMessageId(), ReferenceData.ERROR_MISSING_INTERNAL_MESSAGE_ID, deviceId,
-                    ourMessage.getMessageType(), serializedMessage);
-            return null;
-        }
 
         if (ourMessage.getDeviceId() != deviceId) {
             reportError(ourMessage.getExternallMessageId(), ReferenceData.ERROR_DEVICE_ID_MISMATCH, deviceId,
@@ -172,11 +167,29 @@ public class SendMessageUpstream extends VoltProcedure {
             return null;
         }
 
+        VoltTable existingMessage = null;
+
+        if (ourMessage.isUpstreamOnly()) {
+            
+            ourMessage.setInternalMessageId( this.getUniqueId());
+
+            voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), ourMessage.getInternalMessageId(),
+                    ReferenceData.MESSAGE_IN_FLIGHT);
+            voltExecuteSQL();
+
+        } else {
+
+            if (ourMessage.getExternallMessageId() <= 0) {
+                reportError(this.getUniqueId(), ReferenceData.ERROR_MISSING_EXTERNAL_MESSAGE_ID, deviceId,
+                        ourMessage.getMessageType(), serializedMessage);
+                return null;
+            }
+
+        }
+
         voltQueueSQL(getExistingMessage, deviceId, ourMessage.getExternallMessageId());
 
-        VoltTable[] secondRound = voltExecuteSQL();
-
-        VoltTable existingMessage = secondRound[0];
+        existingMessage = voltExecuteSQL()[0];
 
         if (!existingMessage.advanceRow()) {
 
@@ -184,6 +197,13 @@ public class SendMessageUpstream extends VoltProcedure {
                     ourMessage.getMessageType(), serializedMessage);
             return null;
         }
+        
+        if (ourMessage.getInternalMessageId() <= 0) {
+            reportError(ourMessage.getExternallMessageId(), ReferenceData.ERROR_MISSING_INTERNAL_MESSAGE_ID, deviceId,
+                    ourMessage.getMessageType(), serializedMessage);
+            return null;
+        }
+
 
         long internalMessageId = existingMessage.getLong("internal_message_id");
         String currentStatusCode = existingMessage.getString("status_code");

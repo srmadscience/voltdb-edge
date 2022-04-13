@@ -32,6 +32,7 @@ import edgeprocs.ReferenceData;
 
 public class PowerCoEmulator {
     
+    private static final int ATTEMPTS = 3;
     Consumer<Long, String> kafkaPowercoConsumer;
     Producer<Long, String> kafkaProducer;
 
@@ -49,12 +50,11 @@ public class PowerCoEmulator {
     private void connectToKafkaConsumerAndProducer() {
         try {
  
-            kafkaPowercoConsumer = connectToKafkaConsumerEarliest("10.13.1.106",
+            kafkaPowercoConsumer = connectToKafkaConsumerEarliest("localhost",
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
             kafkaPowercoConsumer.subscribe(Collections.singletonList(ReferenceData.POWERCO_1_TOPIC));
-            kafkaPowercoConsumer.commitSync();
 
         } catch (Exception e) {
             msg(e.getMessage());
@@ -114,9 +114,11 @@ public class PowerCoEmulator {
     
     private ConsumerRecord<Long, String> getNextPowercoRecord(String topic, long messageId) {
 
-        long startMs = System.currentTimeMillis();
+        
 
-        for (int j = 0; j < 3; j++) {
+        for (int j = 0; j < ATTEMPTS; j++) {
+            
+            long startMs = System.currentTimeMillis();
 
             long startPoll = System.currentTimeMillis();
             final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(10000));
@@ -130,7 +132,7 @@ public class PowerCoEmulator {
             while (i.hasNext()) {
                 ConsumerRecord<Long, String> aRecord = i.next();
 
-                if (aRecord.key() == messageId) {
+                if (aRecord.key() == messageId || messageId == Long.MIN_VALUE) {
                     msg("OK:" + aRecord.toString());
                     msg("pass=  "+j+ " took " + (System.currentTimeMillis() - startMs) + " ms");
                     return aRecord;
@@ -246,18 +248,5 @@ public class PowerCoEmulator {
         
     }
 
-    public void flush() {
- 
-//        kafkaPowercoConsumer.unsubscribe();
-//        kafkaPowercoConsumer.close();
-//        kafkaPowercoConsumer = null;
-//
-//        kafkaProducer.flush();
-//        kafkaProducer.close();
-//        kafkaProducer = null;
-//        
-//        connectToKafkaConsumerAndProducer();
-       
-    }
 
 }

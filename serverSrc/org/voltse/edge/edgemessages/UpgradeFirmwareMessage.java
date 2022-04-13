@@ -2,6 +2,7 @@ package org.voltse.edge.edgemessages;
 
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Date;
 
 public class UpgradeFirmwareMessage extends BaseMessage {
 
@@ -15,6 +16,17 @@ public class UpgradeFirmwareMessage extends BaseMessage {
         messageType = UPGRADE_FIRMWARE;
     }
 
+    public UpgradeFirmwareMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
+            Date createDate, int destinationSegmentId, byte[] payload, long callingOwner) {
+
+        super(deviceId, externallMessageId, UPGRADE_FIRMWARE, latencyMs, errorMessage, createDate, destinationSegmentId,
+                callingOwner);
+
+       
+        this.payload = payload;
+
+    }
+    
     /**
      * @return the payload
      */

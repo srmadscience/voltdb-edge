@@ -76,4 +76,6 @@ public interface MessageIFace {
     
     public void setErrorMessage(String errorMessage);
 
+    public boolean isUpstreamOnly();
+
 }

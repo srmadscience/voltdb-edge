@@ -117,6 +117,12 @@ public class SendMessageDownstream extends VoltProcedure {
                     serializedMessage);
             return null;
         }
+        
+        if (ourMessage.isUpstreamOnly()) {
+            reportError(thisTxId, ReferenceData.ERROR_MESSAGE_CANT_BE_SENT_DOWNSTREAM, deviceId,
+                    ourMessage.getMessageType(), un64dMessage);
+            return null;
+        }
 
         if (ourMessage.getExternallMessageId() <= 0) {
             reportError(thisTxId, ReferenceData.ERROR_MISSING_EXTERNAL_MESSAGE_ID, deviceId,

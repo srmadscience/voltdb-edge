@@ -1,5 +1,7 @@
 package org.voltse.edge.edgemessages;
 
+import java.util.Date;
+
 public class DisableFeatureMessage extends BaseMessage {
 
     public boolean enabled;
@@ -9,6 +11,18 @@ public class DisableFeatureMessage extends BaseMessage {
     public DisableFeatureMessage() {
         messageType = DISABLE_FEATURE;
     }
+    
+    public DisableFeatureMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
+            Date createDate, int destinationSegmentId, String featureName, boolean enabled, long callingOwner) {
+
+        super(deviceId, externallMessageId, DISABLE_FEATURE, latencyMs, errorMessage, createDate, destinationSegmentId,
+                callingOwner);
+
+        this.featureName = featureName;
+        this.enabled = enabled;
+
+    }
+
 
     @Override
     public StringBuffer asDelimited(String delimChar) {
@@ -87,6 +101,34 @@ public class DisableFeatureMessage extends BaseMessage {
         builder.append(callingOwner);
         builder.append("]");
         return builder.toString();
+    }
+
+    /**
+     * @return the enabled
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * @param enabled the enabled to set
+     */
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    /**
+     * @return the featureName
+     */
+    public String getFeatureName() {
+        return featureName;
+    }
+
+    /**
+     * @param featureName the featureName to set
+     */
+    public void setFeatureName(String featureName) {
+        this.featureName = featureName;
     }
 
 }

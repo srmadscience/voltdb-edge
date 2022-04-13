@@ -1,5 +1,7 @@
 package org.voltse.edge.edgemessages;
 
+import java.util.Date;
+
 public class StartMessage extends BaseMessage {
 
     boolean started;
@@ -16,6 +18,17 @@ public class StartMessage extends BaseMessage {
         b.append(delimChar);
 
         return b;
+    }
+    
+    public StartMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
+            Date createDate, int destinationSegmentId, boolean started, long callingOwner) {
+
+        super(deviceId, externallMessageId, START, latencyMs, errorMessage, createDate, destinationSegmentId,
+                callingOwner);
+
+       
+        this.started = started;
+
     }
 
     public static StartMessage fromDelimited(String delimChar, String message) {
@@ -77,4 +90,25 @@ public class StartMessage extends BaseMessage {
         builder.append("]");
         return builder.toString();
     }
+
+    /**
+     * @return the started
+     */
+    public boolean isStarted() {
+        return started;
+    }
+
+    /**
+     * @param started the started to set
+     */
+    public void setStarted(boolean started) {
+        this.started = started;
+    }
+    
+    @Override
+    public boolean isUpstreamOnly() {
+   
+        return true;
+    }
+
 }

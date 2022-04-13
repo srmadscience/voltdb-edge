@@ -1,5 +1,7 @@
 package org.voltse.edge.edgemessages;
 
+import java.util.Date;
+
 public class GetStatusMessage extends BaseMessage {
 
     String jsonPayload;
@@ -9,6 +11,17 @@ public class GetStatusMessage extends BaseMessage {
 
     }
 
+    public GetStatusMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
+            Date createDate, int destinationSegmentId,  long callingOwner,String jsonPayload) {
+
+        super(deviceId, externallMessageId, GET_STATUS, latencyMs, errorMessage, createDate, destinationSegmentId,
+                callingOwner);
+
+        this.jsonPayload = jsonPayload;
+
+
+    }
+    
     @Override
     public StringBuffer asDelimited(String delimChar) {
         StringBuffer b = super.asDelimited(delimChar);

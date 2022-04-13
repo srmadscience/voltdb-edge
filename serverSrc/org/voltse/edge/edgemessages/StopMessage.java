@@ -1,5 +1,7 @@
 package org.voltse.edge.edgemessages;
 
+import java.util.Date;
+
 public class StopMessage extends BaseMessage {
 
     boolean stopped;
@@ -17,6 +19,17 @@ public class StopMessage extends BaseMessage {
         b.append(delimChar);
 
         return b;
+    }
+    
+    public StopMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
+            Date createDate, int destinationSegmentId, boolean stopped, long callingOwner) {
+
+        super(deviceId, externallMessageId, STOP, latencyMs, errorMessage, createDate, destinationSegmentId,
+                callingOwner);
+
+       
+        this.stopped = stopped;
+
     }
 
     public static StopMessage fromDelimited(String delimChar, String message) {
@@ -77,6 +90,26 @@ public class StopMessage extends BaseMessage {
         builder.append(callingOwner);
         builder.append("]");
         return builder.toString();
+    }
+
+    /**
+     * @return the stopped
+     */
+    public boolean isStopped() {
+        return stopped;
+    }
+
+    /**
+     * @param stopped the stopped to set
+     */
+    public void setStopped(boolean stopped) {
+        this.stopped = stopped;
+    }
+    
+    @Override
+    public boolean isUpstreamOnly() {
+   
+        return true;
     }
 
 }

@@ -32,42 +32,37 @@ import org.voltse.edge.edgemessages.MessageIFace;
 import edgeprocs.ReferenceData;
 
 public class DeviceEmulator {
-    
+
     Consumer<Long, String> kafkaDeviceConsumer;
     Producer<Long, String> kafkaProducer;
-    
+
     ModelEncoderIFace jsonEncoder = new JsonEncoderImpl();
     ModelEncoderIFace tabEncoder = new TabEncoderImpl();
-    
+
     HashMap<String, ModelEncoderIFace> encoders = new HashMap<String, ModelEncoderIFace>();
 
-    
     final long startMs = System.currentTimeMillis();
-    
+
     public DeviceEmulator() throws Exception {
         super();
         encoders.put(jsonEncoder.getName(), jsonEncoder);
         encoders.put(tabEncoder.getName(), tabEncoder);
 
-       
-            connectToKafkaConsumerAndProducer();
-       
-        
+        connectToKafkaConsumerAndProducer();
+
     }
-    
-    private void connectToKafkaConsumerAndProducer()  {
+
+    private void connectToKafkaConsumerAndProducer() {
         try {
             kafkaDeviceConsumer = connectToKafkaConsumerEarliest("localhost",
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
             kafkaDeviceConsumer.subscribe(Collections.singletonList(ReferenceData.SEGMENT_1_TOPIC));
-           // kafkaDeviceConsumer.commitSync();
-
- 
+  
         } catch (Exception e) {
             msg(e.getMessage());
-           
+
         }
 
         try {
@@ -75,15 +70,15 @@ public class DeviceEmulator {
                     "org.apache.kafka.common.serialization.StringSerializer");
         } catch (Exception e) {
             msg(e.getMessage());
-            
+
         }
     }
-  
-    public MessageIFace receiveDeviceMessage(String topic, long externalMessageId, String encoderName) throws Exception {
+
+    public MessageIFace receiveDeviceMessage(String topic, long externalMessageId, String encoderName)
+            throws Exception {
 
         ModelEncoderIFace ourEncoder = encoders.get(encoderName);
         ConsumerRecord<Long, String> ourRecord = getNextDeviceRecord(topic, externalMessageId);
-        
 
         if (ourRecord == null) {
             fail("receiveJsonMessage == null");
@@ -104,21 +99,18 @@ public class DeviceEmulator {
         }
 
         return (record);
-   }
-    
+    }
+
     private ConsumerRecord<Long, String> getNextDeviceRecord(String topic, long messageId) {
 
-        
-       
         ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(Duration.ofMillis(6000));
-       
 
         Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
 
         while (i.hasNext()) {
             ConsumerRecord<Long, String> aRecord = i.next();
 
-            if (aRecord.key() == messageId) {
+            if (aRecord.key() == messageId || messageId == Long.MIN_VALUE ) {
                 msg("OK:" + aRecord.toString());
                 msg("took " + (System.currentTimeMillis() - startMs) + " ms");
                 return aRecord;
@@ -126,13 +118,12 @@ public class DeviceEmulator {
                 msg(aRecord.toString());
             }
 
-        
         }
         return null;
     }
 
     public void sendMessageUpstream(String topicname, MessageIFace message) {
-        
+
         try {
             ModelEncoderIFace ourEncoder = encoders.get(ReferenceData.getdeviceEncoding(message));
 
@@ -147,22 +138,9 @@ public class DeviceEmulator {
         } catch (Exception e) {
             fail("sendMessageUpstream:" + e.getMessage());
         }
-        
+
     }
 
-    public void flush() {
-//        //kafkaDeviceConsumer.commitSync();
-//        kafkaDeviceConsumer.unsubscribe();
-//        kafkaDeviceConsumer.close();
-//        kafkaDeviceConsumer = null;
-//
-//        kafkaProducer.flush();
-//        kafkaProducer.close();
-//        kafkaProducer = null;
-//        
-//        connectToKafkaConsumerAndProducer();
-    }
-    
     private Consumer<Long, String> connectToKafkaConsumerEarliest(String commaDelimitedHostnames,
             String keyDeserializer, String valueSerializer) throws Exception {
 
@@ -180,17 +158,12 @@ public class DeviceEmulator {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", kafkaBrokers.toString());
-//        props.put("acks", "all");
-//        props.put("retries", 0);
-//        props.put("batch.size", 16384);
-//        props.put("linger.ms", 1);
-//         props.put("buffer.memory", 33554432);
         props.put("auto.commit", true);
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-       props.put("auto.offset.reset", "earliest");
+        props.put("auto.offset.reset", "earliest");
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + startMs);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
@@ -203,6 +176,7 @@ public class DeviceEmulator {
         return newConsumer;
 
     }
+
     private static Producer<Long, String> connectToKafkaProducer(String commaDelimitedHostnames, String keySerializer,
             String valueSerializer) throws Exception {
 
@@ -236,7 +210,7 @@ public class DeviceEmulator {
         return newProducer;
 
     }
-    
+
     /**
      * Print a formatted message.
      *
@@ -250,11 +224,10 @@ public class DeviceEmulator {
         System.out.println(strDate + ":" + message);
 
     }
-    
+
     public static void main(String[] args) {
         // TODO Auto-generated method stub
 
     }
-
 
 }

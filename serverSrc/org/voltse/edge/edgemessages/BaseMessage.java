@@ -308,4 +308,10 @@ public class BaseMessage implements MessageIFace {
         this.callingOwner = callingOwner;
     }
 
+    @Override
+    public boolean isUpstreamOnly() {
+   
+        return false;
+    }
+
 }
