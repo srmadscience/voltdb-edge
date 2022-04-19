@@ -11,7 +11,7 @@ public class DisableFeatureMessage extends BaseMessage {
     public DisableFeatureMessage() {
         messageType = DISABLE_FEATURE;
     }
-    
+
     public DisableFeatureMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
             Date createDate, int destinationSegmentId, String featureName, boolean enabled, long callingOwner) {
 

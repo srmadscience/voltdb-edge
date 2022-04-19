@@ -20,14 +20,14 @@ public class StopMessage extends BaseMessage {
 
         return b;
     }
-    
+
     public StopMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
             Date createDate, int destinationSegmentId, boolean stopped, long callingOwner) {
 
         super(deviceId, externallMessageId, STOP, latencyMs, errorMessage, createDate, destinationSegmentId,
                 callingOwner);
 
-       
+
         this.stopped = stopped;
 
     }
@@ -105,10 +105,10 @@ public class StopMessage extends BaseMessage {
     public void setStopped(boolean stopped) {
         this.stopped = stopped;
     }
-    
+
     @Override
     public boolean isUpstreamOnly() {
-   
+
         return true;
     }
 

@@ -21,7 +21,7 @@ public class GetStatusMessage extends BaseMessage {
 
 
     }
-    
+
     @Override
     public StringBuffer asDelimited(String delimChar) {
         StringBuffer b = super.asDelimited(delimChar);

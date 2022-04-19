@@ -21,6 +21,7 @@ import org.voltdb.voltdbedge.PowerCoEmulator;
 import org.voltse.edge.edgemessages.DisableFeatureMessage;
 import org.voltse.edge.edgemessages.EnableFeatureMessage;
 import org.voltse.edge.edgemessages.GetStatusMessage;
+import org.voltse.edge.edgemessages.MessageIFace;
 import org.voltse.edge.edgemessages.StartMessage;
 import org.voltse.edge.edgemessages.StopMessage;
 import org.voltse.edge.edgemessages.UpgradeFirmwareMessage;
@@ -70,6 +71,9 @@ class TestEndToEndWithAbstractedKafka {
             c.callProcedure("@AdHoc", "DELETE FROM " + element + ";");
         }
 
+        p.drain();
+        d.drain();
+
     }
 
     @AfterEach
@@ -78,6 +82,7 @@ class TestEndToEndWithAbstractedKafka {
         c.drain();
         c.close();
         c = null;
+
     }
 
     @Test
@@ -90,16 +95,16 @@ class TestEndToEndWithAbstractedKafka {
     @Test
     void testEnableFeature() {
 
-        for (int m = 0; m < ReferenceData.METER_TYPES.length; m++) {
+        for (String element : ReferenceData.METER_TYPES) {
 
-            msg(ReferenceData.METER_TYPES[m]);
+            msg(element);
 
             final long recordId = System.currentTimeMillis();
 
             try {
 
                 // Create a generic meter
-                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, ReferenceData.METER_TYPES[m]);
+                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, element);
 
                 long externallMessageId = recordId;
                 long latencyMs = -1;
@@ -124,8 +129,7 @@ class TestEndToEndWithAbstractedKafka {
                 //
 
                 EnableFeatureMessage recoveredMessage = (EnableFeatureMessage) d.receiveDeviceMessage(
-                        ReferenceData.SEGMENT_1_TOPIC, originalMessage.getExternallMessageId(),
-                        ReferenceData.getdeviceEncoding(originalMessage));
+                        originalMessage.getExternallMessageId(), ReferenceData.getdeviceEncoding(originalMessage));
 
                 compareOriginalAndAcceptedEnableFeatureMessages(originalMessage, recoveredMessage);
 
@@ -135,8 +139,8 @@ class TestEndToEndWithAbstractedKafka {
                 // Pretend to be powerco
                 //
 
-                EnableFeatureMessage endStateMessage = (EnableFeatureMessage) p.receiveJsonPowercoMessage(
-                        ReferenceData.POWERCO_1_TOPIC, originalMessage.getExternallMessageId());
+                EnableFeatureMessage endStateMessage = (EnableFeatureMessage) p
+                        .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
                     fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
@@ -154,16 +158,16 @@ class TestEndToEndWithAbstractedKafka {
     @Test
     void testUpgradeFirmware() {
 
-        for (int m = 0; m < ReferenceData.METER_TYPES.length; m++) {
+        for (String element : ReferenceData.METER_TYPES) {
 
-            msg(ReferenceData.METER_TYPES[m]);
+            msg(element);
 
             final long recordId = System.currentTimeMillis();
 
             try {
 
                 // Create a generic meter
-                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, ReferenceData.METER_TYPES[m]);
+                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, element);
 
                 long externallMessageId = recordId;
                 long latencyMs = -1;
@@ -172,7 +176,6 @@ class TestEndToEndWithAbstractedKafka {
                 int destinationSegmentId = -1;
 
                 byte[] payload = new byte[0];
-                ;
 
                 //
                 // Pretend to be powerco
@@ -189,10 +192,9 @@ class TestEndToEndWithAbstractedKafka {
                 //
 
                 UpgradeFirmwareMessage recoveredMessage = (UpgradeFirmwareMessage) d.receiveDeviceMessage(
-                        ReferenceData.SEGMENT_1_TOPIC, originalMessage.getExternallMessageId(),
-                        ReferenceData.getdeviceEncoding(originalMessage));
+                        originalMessage.getExternallMessageId(), ReferenceData.getdeviceEncoding(originalMessage));
 
-                compareOriginalAndAcceptedMessages(originalMessage, recoveredMessage);
+                compareOriginalAndAcceptedFirmwareMessages(originalMessage, recoveredMessage);
 
                 d.sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, recoveredMessage);
 
@@ -200,8 +202,8 @@ class TestEndToEndWithAbstractedKafka {
                 // Pretend to be powerco
                 //
 
-                UpgradeFirmwareMessage endStateMessage = (UpgradeFirmwareMessage) p.receiveJsonPowercoMessage(
-                        ReferenceData.POWERCO_1_TOPIC, originalMessage.getExternallMessageId());
+                UpgradeFirmwareMessage endStateMessage = (UpgradeFirmwareMessage) p
+                        .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
                     fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
@@ -216,25 +218,19 @@ class TestEndToEndWithAbstractedKafka {
         }
     }
 
-    private void compareOriginalAndAcceptedMessages(UpgradeFirmwareMessage originalMessage,
-            UpgradeFirmwareMessage recoveredMessage) {
-        // TODO Auto-generated method stub
-
-    }
-
     @Test
     void testStartMessage() {
 
-        for (int m = 0; m < ReferenceData.METER_TYPES.length; m++) {
+        for (String element : ReferenceData.METER_TYPES) {
 
-            msg(ReferenceData.METER_TYPES[m]);
+            msg(element);
 
             final long recordId = System.currentTimeMillis();
 
             try {
 
                 // Create a generic meter
-                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, ReferenceData.METER_TYPES[m]);
+                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, element);
 
                 long externallMessageId = recordId;
                 long latencyMs = -1;
@@ -257,8 +253,8 @@ class TestEndToEndWithAbstractedKafka {
                 // Pretend to be powerco
                 //
 
-                StartMessage endStateMessage = (StartMessage) p.receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
-                        originalMessage.getExternallMessageId());
+                StartMessage endStateMessage = (StartMessage) p
+                        .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
                     fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
@@ -274,18 +270,134 @@ class TestEndToEndWithAbstractedKafka {
     }
 
     @Test
+    void testManyStartMessages() {
+
+        int howMany = 10;
+        long recordId = System.currentTimeMillis();
+        int startDeviceId = nextDeviceId + 1;
+        int endDeviceId = (int) provisionMany(howMany, TestSendDownstreamWithVolt.TEST_OWNER);
+
+       
+
+        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
+
+            msg("Device="+deviceId);
+            try {
+
+                long externallMessageId = recordId++;
+                long latencyMs = -1;
+                String errorMessage = null;
+                Date createDate = null;
+                int destinationSegmentId = -1;
+
+                boolean started = true;
+
+                //
+                // Pretend to be device
+                //
+
+                StartMessage originalMessage = new StartMessage(deviceId, externallMessageId, latencyMs, errorMessage,
+                        createDate, destinationSegmentId, started, 1);
+
+                d.sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, originalMessage);
+
+            } catch (Exception e) {
+                msg(e.getMessage());
+                fail(e);
+            }
+        }
+
+        
+
+        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
+            //
+            // Pretend to be powerco
+            //
+            msg("Device="+deviceId);
+            try {
+
+                StartMessage endStateMessage = (StartMessage) p.receiveJsonPowercoMessage(Long.MIN_VALUE);
+
+                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
+                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+
+                }
+
+            } catch (Exception e) {
+                msg(e.getMessage());
+                fail(e);
+            }
+
+        }
+        
+        
+//        // now send stop messages  
+//        
+//        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
+//
+//            try {
+//
+//                long externallMessageId = recordId++;
+//                long latencyMs = -1;
+//                String errorMessage = null;
+//                Date createDate = null;
+//                int destinationSegmentId = -1;
+//
+//                boolean started = true;
+//
+//                //
+//                // Pretend to be device
+//                //
+//                msg("Device="+deviceId);
+//                StopMessage originalMessage = new StopMessage(deviceId, externallMessageId, latencyMs, errorMessage,
+//                        createDate, destinationSegmentId, started, 1);
+//
+//                d.sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, originalMessage);
+//
+//            } catch (Exception e) {
+//                msg(e.getMessage());
+//                fail(e);
+//            }
+//        }
+//
+//        
+//
+//        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
+//            //
+//            // Pretend to be powerco
+//            //
+//
+//            try {
+//                msg("Device="+deviceId);
+//                StopMessage endStateMessage = (StopMessage) p.receiveJsonPowercoMessage(Long.MIN_VALUE);
+//
+//                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
+//                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+//
+//                }
+//
+//            } catch (Exception e) {
+//                msg(e.getMessage());
+//                fail(e);
+//            }
+//
+//        }
+//
+    }
+
+    @Test
     void testStopMessage() {
 
-        for (int m = 0; m < ReferenceData.METER_TYPES.length; m++) {
+        for (String element : ReferenceData.METER_TYPES) {
 
-            msg(ReferenceData.METER_TYPES[m]);
+            msg(element);
 
             final long recordId = System.currentTimeMillis();
 
             try {
 
                 // Create a generic meter
-                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, ReferenceData.METER_TYPES[m]);
+                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, element);
 
                 long externallMessageId = recordId;
                 long latencyMs = -1;
@@ -308,8 +420,8 @@ class TestEndToEndWithAbstractedKafka {
                 // Pretend to be powerco
                 //
 
-                StopMessage endStateMessage = (StopMessage) p.receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC,
-                        originalMessage.getExternallMessageId());
+                StopMessage endStateMessage = (StopMessage) p
+                        .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
                     fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
@@ -327,16 +439,16 @@ class TestEndToEndWithAbstractedKafka {
     @Test
     void testDisableFeature() {
 
-        for (int m = 0; m < ReferenceData.METER_TYPES.length; m++) {
+        for (String element : ReferenceData.METER_TYPES) {
 
-            msg(ReferenceData.METER_TYPES[m]);
+            msg(element);
 
             final long recordId = System.currentTimeMillis();
 
             try {
 
                 // Create a generic meter
-                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, ReferenceData.METER_TYPES[m]);
+                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, element);
 
                 long externallMessageId = recordId;
                 long latencyMs = -1;
@@ -362,8 +474,7 @@ class TestEndToEndWithAbstractedKafka {
                 //
 
                 DisableFeatureMessage recoveredMessage = (DisableFeatureMessage) d.receiveDeviceMessage(
-                        ReferenceData.SEGMENT_1_TOPIC, originalMessage.getExternallMessageId(),
-                        ReferenceData.getdeviceEncoding(originalMessage));
+                        originalMessage.getExternallMessageId(), ReferenceData.getdeviceEncoding(originalMessage));
 
                 compareOriginalAndAcceptedDisableFeatureMessages(originalMessage, recoveredMessage);
 
@@ -373,8 +484,8 @@ class TestEndToEndWithAbstractedKafka {
                 // Pretend to be powerco
                 //
 
-                DisableFeatureMessage endStateMessage = (DisableFeatureMessage) p.receiveJsonPowercoMessage(
-                        ReferenceData.POWERCO_1_TOPIC, originalMessage.getExternallMessageId());
+                DisableFeatureMessage endStateMessage = (DisableFeatureMessage) p
+                        .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
                     fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
@@ -392,16 +503,16 @@ class TestEndToEndWithAbstractedKafka {
     @Test
     void testGetStatus() {
 
-        for (int m = 0; m < ReferenceData.METER_TYPES.length; m++) {
+        for (String element : ReferenceData.METER_TYPES) {
 
-            msg(ReferenceData.METER_TYPES[m]);
+            msg(element);
 
             final long recordId = System.currentTimeMillis();
 
             try {
 
                 // Create a generic meter
-                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, ReferenceData.METER_TYPES[m]);
+                long deviceId = provision(TestSendDownstreamWithVolt.TEST_OWNER, element);
 
                 long externallMessageId = recordId;
                 long latencyMs = -1;
@@ -424,8 +535,7 @@ class TestEndToEndWithAbstractedKafka {
                 //
 
                 GetStatusMessage recoveredMessage = (GetStatusMessage) d.receiveDeviceMessage(
-                        ReferenceData.SEGMENT_1_TOPIC, originalMessage.getExternallMessageId(),
-                        ReferenceData.getdeviceEncoding(originalMessage));
+                        originalMessage.getExternallMessageId(), ReferenceData.getdeviceEncoding(originalMessage));
 
                 compareOriginalAndAcceptedGetStatusMessageMessages(originalMessage, recoveredMessage);
 
@@ -435,8 +545,8 @@ class TestEndToEndWithAbstractedKafka {
                 // Pretend to be powerco
                 //
 
-                GetStatusMessage endStateMessage = (GetStatusMessage) p.receiveJsonPowercoMessage(
-                        ReferenceData.POWERCO_1_TOPIC, originalMessage.getExternallMessageId());
+                GetStatusMessage endStateMessage = (GetStatusMessage) p
+                        .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
                     fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
@@ -453,7 +563,8 @@ class TestEndToEndWithAbstractedKafka {
 
     private void compareOriginalAndAcceptedGetStatusMessageMessages(GetStatusMessage originalMessage,
             GetStatusMessage recoveredMessage) {
-        // TODO Auto-generated method stub
+
+        compareOriginalAndAcceptedMessagesMessageIFace(originalMessage, recoveredMessage);
 
     }
 
@@ -481,6 +592,7 @@ class TestEndToEndWithAbstractedKafka {
             EnableFeatureMessage originalMessage = new EnableFeatureMessage(deviceId, externallMessageId, latencyMs,
                     errorMessage, createDate, destinationSegmentId, featureName, enabled, 1);
 
+            msg("sendMessageDownstream");
             p.sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, TestSendDownstreamWithVolt.TEST_OWNER,
                     originalMessage);
 
@@ -488,20 +600,22 @@ class TestEndToEndWithAbstractedKafka {
             // Pretend to be a meter
             //
 
+            msg("receiveDeviceMessage");
             EnableFeatureMessage recoveredMessage = (EnableFeatureMessage) d.receiveDeviceMessage(
-                    ReferenceData.SEGMENT_1_TOPIC, originalMessage.getExternallMessageId(),
-                    ReferenceData.getdeviceEncoding(originalMessage));
+                    originalMessage.getExternallMessageId(), ReferenceData.getdeviceEncoding(originalMessage));
 
             compareOriginalAndAcceptedEnableFeatureMessages(originalMessage, recoveredMessage);
 
+            msg("sendMessageUpstream");
             d.sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, recoveredMessage);
 
             //
             // Pretend to be powerco
             //
 
+            msg("get endStateMessage");
             EnableFeatureMessage endStateMessage = (EnableFeatureMessage) p
-                    .receiveJsonPowercoMessage(ReferenceData.POWERCO_1_TOPIC, originalMessage.getExternallMessageId());
+                    .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
             if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
                 fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
@@ -515,9 +629,10 @@ class TestEndToEndWithAbstractedKafka {
 
     }
 
-    private void compareOriginalAndAcceptedEnableFeatureMessages(EnableFeatureMessage originalMessage,
-            EnableFeatureMessage recoveredMessage) {
-        if (recoveredMessage.deviceId != originalMessage.deviceId) {
+    private void compareOriginalAndAcceptedMessagesMessageIFace(MessageIFace originalMessage,
+            MessageIFace recoveredMessage) {
+
+        if (recoveredMessage.getDeviceId() != originalMessage.getDeviceId()) {
             fail("Device id mismatch");
         }
 
@@ -525,17 +640,24 @@ class TestEndToEndWithAbstractedKafka {
             fail("Create Date is null");
         }
 
-        if (recoveredMessage.latencyMs != -1) {
+        if (recoveredMessage.getLatencyMs() != -1) {
             fail("latencyMs set");
         }
 
-        if (recoveredMessage.errorMessage != null) {
+        if (recoveredMessage.getErrorMessage() != null) {
             fail("errorMessage set");
         }
 
-        if (recoveredMessage.destinationSegmentId == -1) {
+        if (recoveredMessage.getDestinationSegmentId() == -1) {
             fail("destinationSegmentId id mismatch");
         }
+
+    }
+
+    private void compareOriginalAndAcceptedEnableFeatureMessages(EnableFeatureMessage originalMessage,
+            EnableFeatureMessage recoveredMessage) {
+
+        compareOriginalAndAcceptedMessagesMessageIFace(originalMessage, recoveredMessage);
 
         if (!recoveredMessage.featureName.equals(originalMessage.featureName)) {
             fail("featureName mismatch");
@@ -549,25 +671,7 @@ class TestEndToEndWithAbstractedKafka {
     private void compareOriginalAndAcceptedDisableFeatureMessages(DisableFeatureMessage originalMessage,
             DisableFeatureMessage recoveredMessage) {
 
-        if (recoveredMessage.deviceId != originalMessage.deviceId) {
-            fail("Device id mismatch");
-        }
-
-        if (recoveredMessage.getCreateDate() == null) {
-            fail("Create Date is null");
-        }
-
-        if (recoveredMessage.latencyMs != -1) {
-            fail("latencyMs set");
-        }
-
-        if (recoveredMessage.errorMessage != null) {
-            fail("errorMessage set");
-        }
-
-        if (recoveredMessage.destinationSegmentId == -1) {
-            fail("destinationSegmentId id mismatch");
-        }
+        compareOriginalAndAcceptedMessagesMessageIFace(originalMessage, recoveredMessage);
 
         if (!recoveredMessage.featureName.equals(originalMessage.featureName)) {
             fail("featureName mismatch");
@@ -576,6 +680,13 @@ class TestEndToEndWithAbstractedKafka {
         if (!recoveredMessage.isEnabled()) {
             fail("isEnabled mismatch");
         }
+    }
+
+    private void compareOriginalAndAcceptedFirmwareMessages(UpgradeFirmwareMessage originalMessage,
+            UpgradeFirmwareMessage recoveredMessage) {
+
+        compareOriginalAndAcceptedMessagesMessageIFace(originalMessage, recoveredMessage);
+
     }
 
     private void checkResponseOK(ClientResponse cr) {
@@ -612,6 +723,29 @@ class TestEndToEndWithAbstractedKafka {
         } catch (IOException | ProcCallException e) {
             fail(e.getMessage());
         }
+
+        return nextDeviceId;
+    }
+
+    long provisionMany(int howMany, long powerCo) {
+
+        msg("Creating " + howMany + " devices...");
+        for (int i = 0; i < howMany; i++) {
+            nextDeviceId++;
+
+            try {
+                ClientResponse cr = c.callProcedure("ProvisionDevice", nextDeviceId,
+                        ReferenceData.METER_TYPES[(nextDeviceId + 1) % 2], TestSendDownstreamWithVolt.TEST_LOCATION,
+                        powerCo);
+
+                checkResponseOK(cr);
+
+            } catch (IOException | ProcCallException e) {
+                fail(e.getMessage());
+            }
+
+        }
+        msg("Creating " + howMany + " devices...done");
 
         return nextDeviceId;
     }

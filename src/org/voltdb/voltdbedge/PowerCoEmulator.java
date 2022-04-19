@@ -7,7 +7,6 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -25,32 +24,29 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.voltdb.client.topics.VoltDBKafkaPartitioner;
 import org.voltse.edge.edgeencoders.JsonEncoderImpl;
 import org.voltse.edge.edgeencoders.ModelEncoderIFace;
-import org.voltse.edge.edgeencoders.TabEncoderImpl;
 import org.voltse.edge.edgemessages.MessageIFace;
 
 import edgeprocs.ReferenceData;
 
 public class PowerCoEmulator {
-    
-    private static final int ATTEMPTS = 3;
+
+    private static final int POLL_DELAY = 5000;
     Consumer<Long, String> kafkaPowercoConsumer;
     Producer<Long, String> kafkaProducer;
 
-
     ModelEncoderIFace jsonEncoder = new JsonEncoderImpl();
-    
-    final long startMs = System.currentTimeMillis();
-    
-    
-    public PowerCoEmulator() throws Exception {   
+
+    final long powerCoEmulatorId = System.currentTimeMillis();
+
+    public PowerCoEmulator() throws Exception {
         super();
         connectToKafkaConsumerAndProducer();
-     }
-    
+    }
+
     private void connectToKafkaConsumerAndProducer() {
         try {
- 
-            kafkaPowercoConsumer = connectToKafkaConsumerEarliest("localhost",
+
+            kafkaPowercoConsumer = connectToKafkaConsumer("localhost",
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -58,7 +54,8 @@ public class PowerCoEmulator {
 
         } catch (Exception e) {
             msg(e.getMessage());
-            
+            fail(e);
+
         }
 
         try {
@@ -66,13 +63,12 @@ public class PowerCoEmulator {
                     "org.apache.kafka.common.serialization.StringSerializer");
         } catch (Exception e) {
             msg(e.getMessage());
-            
+            fail(e);
+
         }
     }
 
-    
-  public void sendMessageDownstream(String topicname, long testOwner, MessageIFace message) throws Exception {
-        
+    public void sendMessageDownstream(String topicname, long testOwner, MessageIFace message) throws Exception {
 
         String encodedMessage = jsonEncoder.encode(message);
 
@@ -82,12 +78,12 @@ public class PowerCoEmulator {
 
         kafkaProducer.send(record).get();
 
+
     }
-  
 
-    public MessageIFace receiveJsonPowercoMessage(String topic, long externalMessageId) throws Exception {
+    public MessageIFace receiveJsonPowercoMessage(long externalMessageId) throws Exception {
 
-        ConsumerRecord<Long, String> ourRecord = getNextPowercoRecord(topic, externalMessageId);
+        ConsumerRecord<Long, String> ourRecord = getNextPowercoRecord(externalMessageId);
 
         if (ourRecord == null) {
             fail("receiveJsonMessage == null");
@@ -100,10 +96,10 @@ public class PowerCoEmulator {
         MessageIFace record = jsonEncoder.decode(recordAsCSV[3]);
 
         if (ourRecord.key() != record.getExternallMessageId()) {
-            fail("Right record not found, " + ourRecord.key() + " != " + record.getExternallMessageId());
+            fail("key mismatch, " + ourRecord.key() + " != " + record.getExternallMessageId());
         }
 
-        if (ourRecord.key() != externalMessageId) {
+        if (ourRecord.key() != externalMessageId && externalMessageId != Long.MIN_VALUE) {
             fail("Right record not found, " + ourRecord.key() + " != " + externalMessageId);
         }
 
@@ -111,43 +107,43 @@ public class PowerCoEmulator {
 
     }
 
-    
-    private ConsumerRecord<Long, String> getNextPowercoRecord(String topic, long messageId) {
+    private ConsumerRecord<Long, String> getNextPowercoRecord(long messageId) {
 
-        
+        ConsumerRecords<Long, String> consumerRecords = null;
 
-        for (int j = 0; j < ATTEMPTS; j++) {
-            
             long startMs = System.currentTimeMillis();
 
             long startPoll = System.currentTimeMillis();
-            final ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(10000));
+            consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(POLL_DELAY));
+            kafkaPowercoConsumer.commitAsync();
 
             if (startPoll + 30 < System.currentTimeMillis()) {
-                msg(j+ ": took " + (System.currentTimeMillis() - startPoll));
+                msg("took " + (System.currentTimeMillis() - startPoll));
             }
+
+            msg("rows=" + consumerRecords.count());
 
             Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
 
+            int howMany = 0;
+
             while (i.hasNext()) {
+                howMany++;
                 ConsumerRecord<Long, String> aRecord = i.next();
 
                 if (aRecord.key() == messageId || messageId == Long.MIN_VALUE) {
                     msg("OK:" + aRecord.toString());
-                    msg("pass=  "+j+ " took " + (System.currentTimeMillis() - startMs) + " ms");
+                    msg("took " + (System.currentTimeMillis() - startMs) + "ms howmany=" + howMany);
                     return aRecord;
-                } else {
-                    msg(aRecord.toString());
-                }
+                } 
 
             }
 
-        }
-        msg("FAILED and took " + (System.currentTimeMillis() - startMs) + " ms");
+        fail("No ConsumerRecord found");
         return null;
     }
-    
-    private Consumer<Long, String> connectToKafkaConsumerEarliest(String commaDelimitedHostnames,
+
+    private Consumer<Long, String> connectToKafkaConsumer(String commaDelimitedHostnames,
             String keyDeserializer, String valueSerializer) throws Exception {
 
         String[] hostnameArray = commaDelimitedHostnames.split(",");
@@ -163,15 +159,12 @@ public class PowerCoEmulator {
         }
 
         Properties props = new Properties();
-        props.put("bootstrap.servers", kafkaBrokers.toString());
-        props.put("auto.commit", true);
-
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers.toString());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
-        props.put("auto.offset.reset", "earliest");
-
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + startMs);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + powerCoEmulatorId );
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
 
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
@@ -181,7 +174,7 @@ public class PowerCoEmulator {
         return newConsumer;
 
     }
-    
+
     /**
      * Print a formatted message.
      *
@@ -232,7 +225,7 @@ public class PowerCoEmulator {
 
     public static void main(String[] args) {
         try {
-            PowerCoEmulator p  = new PowerCoEmulator();
+            PowerCoEmulator p = new PowerCoEmulator();
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -241,12 +234,32 @@ public class PowerCoEmulator {
     }
 
     public void close() {
-      
 
-        
-       
-        
     }
 
+    public void drain() {
+
+        msg("PowerCoEmulator drain");
+        long startPoll = System.currentTimeMillis();
+        @SuppressWarnings("unused")
+        ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(5000));
+        int howMany = consumerRecords.count();
+
+        while (consumerRecords != null && consumerRecords.count() > 0) {
+            consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(1));
+            howMany += consumerRecords.count();
+        }
+
+        if (startPoll + 30 < System.currentTimeMillis()) {
+            msg("drain took " + (System.currentTimeMillis() - startPoll) + "ms");
+        }
+
+        if (howMany > 1) {
+            msg("drained " + howMany + " records");
+        }
+
+        kafkaPowercoConsumer.commitSync();
+
+    }
 
 }

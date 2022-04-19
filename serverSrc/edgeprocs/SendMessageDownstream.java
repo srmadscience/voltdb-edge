@@ -31,7 +31,6 @@ import org.voltcore.logging.VoltLogger;
 import org.voltdb.SQLStmt;
 import org.voltdb.VoltProcedure;
 import org.voltdb.VoltTable;
-import org.voltdb.types.TimestampType;
 import org.voltse.edge.edgeencoders.ModelEncoderIFace;
 import org.voltse.edge.edgemessages.BaseMessage;
 import org.voltse.edge.edgemessages.MessageIFace;
@@ -117,7 +116,7 @@ public class SendMessageDownstream extends VoltProcedure {
                     serializedMessage);
             return null;
         }
-        
+
         if (ourMessage.isUpstreamOnly()) {
             reportError(thisTxId, ReferenceData.ERROR_MESSAGE_CANT_BE_SENT_DOWNSTREAM, deviceId,
                     ourMessage.getMessageType(), un64dMessage);

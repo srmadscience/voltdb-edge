@@ -95,13 +95,13 @@ public class BaseMessage implements MessageIFace {
         externallMessageId = Long.parseLong(internals[2]);
         messageType = internals[3];
         latencyMs = Long.parseLong(internals[4]);
-        
+
         if (internals[5] != null && internals[5].length() > 0) {
             errorMessage = internals[5];
         } else {
             errorMessage = null;
         }
-  
+
         if (internals[6] != null && internals[6].length() > 0) {
             createDate = new Date(Long.parseLong(internals[6]));
         } else {
@@ -289,6 +289,7 @@ public class BaseMessage implements MessageIFace {
     /**
      * @param errorMessage the errorMessage to set
      */
+    @Override
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
     }
@@ -310,8 +311,10 @@ public class BaseMessage implements MessageIFace {
 
     @Override
     public boolean isUpstreamOnly() {
-   
+
         return false;
     }
+ 
+   
 
 }

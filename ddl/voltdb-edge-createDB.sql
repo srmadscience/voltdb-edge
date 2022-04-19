@@ -31,6 +31,8 @@ CREATE TABLE devices
 
 PARTITION TABLE devices ON COLUMN device_id;
 
+CREATE INDEX devixes_idx1 ON devices (location_id);
+
 CREATE TABLE models
 (model_number varchar(30) not null primary key
 ,encoder_class_name varchar(512) not null);
@@ -123,6 +125,17 @@ FROM device_messages
 WHERE device_id = ?
 AND   message_id = ?
 ORDER BY device_id,message_id ;
+
+CREATE PROCEDURE GetDevicesForLocation
+AS
+SELECT d.device_id, m.encoder_class_name, m.model_number 
+FROM   devices d   
+   ,   locations l
+   ,   models m
+WHERE d.location_id = l.location_id
+AND   l.segment_id = ?
+AND   d.model_number = m.model_number
+ORDER BY d.device_id;
 
 END_OF_BATCH
 

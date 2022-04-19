@@ -19,14 +19,14 @@ public class StartMessage extends BaseMessage {
 
         return b;
     }
-    
+
     public StartMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
             Date createDate, int destinationSegmentId, boolean started, long callingOwner) {
 
         super(deviceId, externallMessageId, START, latencyMs, errorMessage, createDate, destinationSegmentId,
                 callingOwner);
 
-       
+
         this.started = started;
 
     }
@@ -104,10 +104,10 @@ public class StartMessage extends BaseMessage {
     public void setStarted(boolean started) {
         this.started = started;
     }
-    
+
     @Override
     public boolean isUpstreamOnly() {
-   
+
         return true;
     }
 

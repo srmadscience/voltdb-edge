@@ -30,7 +30,7 @@ import org.voltse.edge.edgemessages.MessageIFace;
 
 import edgeprocs.ReferenceData;
 
-public class DeviceEmulator {
+public class DeviceFarm {
 
     private static final int POLL_DELAY = 5000;
 
@@ -42,11 +42,14 @@ public class DeviceEmulator {
 
     HashMap<String, ModelEncoderIFace> encoders = new HashMap<>();
     
+    HashMap<Long, Device> devices = new HashMap<Long, Device>();
+    int howMany = 0;
+
     final long deviceEmulatorId = System.currentTimeMillis();
 
-    public DeviceEmulator() throws Exception {
+    public DeviceFarm(int howMany) throws Exception {
         super();
-      
+        this.howMany = howMany;
         encoders.put(jsonEncoder.getName(), jsonEncoder);
         encoders.put(tabEncoder.getName(), tabEncoder);
 

@@ -31,7 +31,6 @@ import org.voltcore.logging.VoltLogger;
 import org.voltdb.SQLStmt;
 import org.voltdb.VoltProcedure;
 import org.voltdb.VoltTable;
-import org.voltdb.types.TimestampType;
 import org.voltse.edge.edgeencoders.ModelEncoderIFace;
 import org.voltse.edge.edgemessages.MessageIFace;
 
@@ -67,7 +66,7 @@ public class SendMessageUpstream extends VoltProcedure {
     public static final SQLStmt reportError  = new SQLStmt("INSERT INTO error_stream "
             + "(message_id,device_id,error_code,event_kind,payload) "
             + "VALUES (?,?,?,?,?);");
-    
+
     public static final SQLStmt createDeviceMessage = new SQLStmt(
             "INSERT INTO device_messages(device_id, message_date, message_id, internal_message_id,status_code) "
             + "VALUES "
@@ -170,7 +169,7 @@ public class SendMessageUpstream extends VoltProcedure {
         VoltTable existingMessage = null;
 
         if (ourMessage.isUpstreamOnly()) {
-            
+
             ourMessage.setInternalMessageId( this.getUniqueId());
 
             voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), ourMessage.getInternalMessageId(),
@@ -197,7 +196,7 @@ public class SendMessageUpstream extends VoltProcedure {
                     ourMessage.getMessageType(), serializedMessage);
             return null;
         }
-        
+
         if (ourMessage.getInternalMessageId() <= 0) {
             reportError(ourMessage.getExternallMessageId(), ReferenceData.ERROR_MISSING_INTERNAL_MESSAGE_ID, deviceId,
                     ourMessage.getMessageType(), serializedMessage);
