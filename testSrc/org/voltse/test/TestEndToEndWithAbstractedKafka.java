@@ -16,8 +16,6 @@ import org.voltdb.client.ClientConfig;
 import org.voltdb.client.ClientFactory;
 import org.voltdb.client.ClientResponse;
 import org.voltdb.client.ProcCallException;
-import org.voltdb.voltdbedge.DeviceEmulator;
-import org.voltdb.voltdbedge.PowerCoEmulator;
 import org.voltse.edge.edgemessages.DisableFeatureMessage;
 import org.voltse.edge.edgemessages.EnableFeatureMessage;
 import org.voltse.edge.edgemessages.GetStatusMessage;
@@ -142,8 +140,8 @@ class TestEndToEndWithAbstractedKafka {
                 EnableFeatureMessage endStateMessage = (EnableFeatureMessage) p
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
-                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
 
                 }
 
@@ -205,8 +203,8 @@ class TestEndToEndWithAbstractedKafka {
                 UpgradeFirmwareMessage endStateMessage = (UpgradeFirmwareMessage) p
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
-                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
 
                 }
 
@@ -256,8 +254,8 @@ class TestEndToEndWithAbstractedKafka {
                 StartMessage endStateMessage = (StartMessage) p
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
-                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
 
                 }
 
@@ -267,122 +265,6 @@ class TestEndToEndWithAbstractedKafka {
             }
         }
 
-    }
-
-    @Test
-    void testManyStartMessages() {
-
-        int howMany = 10;
-        long recordId = System.currentTimeMillis();
-        int startDeviceId = nextDeviceId + 1;
-        int endDeviceId = (int) provisionMany(howMany, TestSendDownstreamWithVolt.TEST_OWNER);
-
-       
-
-        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
-
-            msg("Device="+deviceId);
-            try {
-
-                long externallMessageId = recordId++;
-                long latencyMs = -1;
-                String errorMessage = null;
-                Date createDate = null;
-                int destinationSegmentId = -1;
-
-                boolean started = true;
-
-                //
-                // Pretend to be device
-                //
-
-                StartMessage originalMessage = new StartMessage(deviceId, externallMessageId, latencyMs, errorMessage,
-                        createDate, destinationSegmentId, started, 1);
-
-                d.sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, originalMessage);
-
-            } catch (Exception e) {
-                msg(e.getMessage());
-                fail(e);
-            }
-        }
-
-        
-
-        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
-            //
-            // Pretend to be powerco
-            //
-            msg("Device="+deviceId);
-            try {
-
-                StartMessage endStateMessage = (StartMessage) p.receiveJsonPowercoMessage(Long.MIN_VALUE);
-
-                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
-
-                }
-
-            } catch (Exception e) {
-                msg(e.getMessage());
-                fail(e);
-            }
-
-        }
-        
-        
-//        // now send stop messages  
-//        
-//        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
-//
-//            try {
-//
-//                long externallMessageId = recordId++;
-//                long latencyMs = -1;
-//                String errorMessage = null;
-//                Date createDate = null;
-//                int destinationSegmentId = -1;
-//
-//                boolean started = true;
-//
-//                //
-//                // Pretend to be device
-//                //
-//                msg("Device="+deviceId);
-//                StopMessage originalMessage = new StopMessage(deviceId, externallMessageId, latencyMs, errorMessage,
-//                        createDate, destinationSegmentId, started, 1);
-//
-//                d.sendMessageUpstream(ReferenceData.UPSTREAM_TOPIC, originalMessage);
-//
-//            } catch (Exception e) {
-//                msg(e.getMessage());
-//                fail(e);
-//            }
-//        }
-//
-//        
-//
-//        for (int deviceId = startDeviceId; deviceId <= endDeviceId; deviceId++) {
-//            //
-//            // Pretend to be powerco
-//            //
-//
-//            try {
-//                msg("Device="+deviceId);
-//                StopMessage endStateMessage = (StopMessage) p.receiveJsonPowercoMessage(Long.MIN_VALUE);
-//
-//                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-//                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
-//
-//                }
-//
-//            } catch (Exception e) {
-//                msg(e.getMessage());
-//                fail(e);
-//            }
-//
-//        }
-//
     }
 
     @Test
@@ -423,8 +305,8 @@ class TestEndToEndWithAbstractedKafka {
                 StopMessage endStateMessage = (StopMessage) p
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
-                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
 
                 }
 
@@ -487,8 +369,8 @@ class TestEndToEndWithAbstractedKafka {
                 DisableFeatureMessage endStateMessage = (DisableFeatureMessage) p
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
-                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
 
                 }
 
@@ -548,8 +430,8 @@ class TestEndToEndWithAbstractedKafka {
                 GetStatusMessage endStateMessage = (GetStatusMessage) p
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
-                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+                if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
 
                 }
 
@@ -617,8 +499,8 @@ class TestEndToEndWithAbstractedKafka {
             EnableFeatureMessage endStateMessage = (EnableFeatureMessage) p
                     .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
-            if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE + "")) {
-                fail("Expected " + ReferenceData.MESSAGE_DONE + ", got " + endStateMessage.getErrorMessage());
+            if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
+                fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
 
             }
 

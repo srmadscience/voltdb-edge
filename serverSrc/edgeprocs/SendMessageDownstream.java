@@ -58,9 +58,10 @@ public class SendMessageDownstream extends VoltProcedure {
             "SELECT * FROM device_messages WHERE device_id = ? AND message_id = ?;");
 
     public static final SQLStmt createDeviceMessage = new SQLStmt(
-            "INSERT INTO device_messages(device_id, message_date, message_id, internal_message_id,status_code) "
+            "INSERT INTO device_messages(device_id, message_date, message_id, internal_message_id"
+            + ",status_code,segment_id,current_owner_id) "
             + "VALUES "
-            + "(?,NOW,?,?,?);");
+            + "(?,NOW,?,?,?,?,?);");
 
     public static final SQLStmt insertIntoStream0 = new SQLStmt(
             "INSERT INTO segment_0_stream(message_id, device_id, payload) VALUES (?,?,?);");
@@ -239,7 +240,7 @@ public class SendMessageDownstream extends VoltProcedure {
         }
 
         // Record messages existence...
-        voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), thisTxId, messageStatus);
+        voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), thisTxId, messageStatus,ourMessage.getDestinationSegmentId(),currentOwnerId);
 
         // See if link has capacity
 

@@ -43,9 +43,32 @@ CREATE TABLE device_messages
 ,message_id bigint not null
 ,internal_message_id bigint not null
 ,status_code varchar(5) not null
+,segment_id bigint not null 
+,current_owner_id bigint not null
 ,primary key (device_id,message_id));
 
 PARTITION TABLE device_messages ON COLUMN device_id;
+
+CREATE VIEW device_message_summary AS
+SELECT status_code, count(*) how_many
+FROM  device_messages
+GROUP BY status_code;
+
+CREATE VIEW device_message_activity AS
+SELECT
+truncate(MINUTE, message_date) message_date 
+,status_code 
+,segment_id  
+,current_owner_id
+, count(*) how_many
+FROM device_messages
+GROUP BY truncate(MINUTE, message_date) 
+,status_code 
+,segment_id  
+,current_owner_id;
+
+CREATE INDEX dma_ix1 ON device_message_activity(message_date);
+
 
 CREATE STREAM segment_1_stream
 PARTITION ON COLUMN device_id 
@@ -89,9 +112,34 @@ PARTITION ON COLUMN device_id
 ,device_id bigint not null 
 ,error_code tinyint not null
 ,event_kind varchar(80)
+,error_date timestamp default NOW
 ,payload varchar(2048));
 
+CREATE VIEW error_summary_view AS
+SELECT truncate(MINUTE, error_date) error_date
+     , error_code
+     , count(*) how_many
+FROM error_stream
+GROUP BY truncate(MINUTE, error_date) 
+     , error_code;
+     
 
+
+ CREATE TABLE promBL_latency_stats
+ (statname varchar(128) not null
+ ,stathelp varchar(128) not null
+ ,event_type varchar(128) not null
+ ,event_name varchar(128) not null
+ ,statvalue  bigint not null
+ ,lastdate timestamp not null
+ ,primary key (statname, event_type, event_name))
+ USING TTL 1 MINUTES ON COLUMN lastdate;
+ 
+ CREATE INDEX pls_ix1 ON promBL_latency_stats(lastdate);
+ 
+ PARTITION TABLE promBL_latency_stats ON COLUMN statname;
+
+ 
 CREATE PROCEDURE  
    PARTITION ON TABLE  devices COLUMN device_id
    FROM CLASS edgeprocs.ProvisionDevice;
@@ -136,6 +184,40 @@ WHERE d.location_id = l.location_id
 AND   l.segment_id = ?
 AND   d.model_number = m.model_number
 ORDER BY d.device_id;
+
+
+CREATE PROCEDURE GetDevicesForPowerco
+AS
+SELECT d.device_id, m.encoder_class_name, m.model_number 
+FROM   devices d   
+   ,   locations l
+   ,   models m
+WHERE d.location_id = l.location_id
+AND   d.current_owner_id = ?
+AND   d.model_number = m.model_number
+ORDER BY d.device_id;
+
+CREATE PROCEDURE GetStats__promBL AS
+BEGIN
+--
+select  statname, stathelp, event_type, event_name, statvalue 
+from promBL_latency_stats
+order by statname, stathelp, event_type, event_name, statvalue ;
+--
+select  'bl_transaction_status' statname
+, 'bl_transaction_status' stathelp 
+,status_code  
+,  how_many  statvalue from device_message_summary;
+--
+select 'bl_message_activity' statname
+, 'bl_tmessage_activity' stathelp 
+,status_code 
+,segment_id  
+,current_owner_id
+, how_many statvalue
+from device_message_activity 
+where message_date = dateadd(minute,-1,truncate(minute,now));
+END;
 
 END_OF_BATCH
 

@@ -68,9 +68,9 @@ public class SendMessageUpstream extends VoltProcedure {
             + "VALUES (?,?,?,?,?);");
 
     public static final SQLStmt createDeviceMessage = new SQLStmt(
-            "INSERT INTO device_messages(device_id, message_date, message_id, internal_message_id,status_code) "
+            "INSERT INTO device_messages(device_id, message_date, message_id, internal_message_id,status_code,segment_id, current_owner_id) "
             + "VALUES "
-            + "(?,NOW,?,?,?);");
+            + "(?,NOW,?,?,?,?,?);");
 
 
 
@@ -173,7 +173,7 @@ public class SendMessageUpstream extends VoltProcedure {
             ourMessage.setInternalMessageId( this.getUniqueId());
 
             voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), ourMessage.getInternalMessageId(),
-                    ReferenceData.MESSAGE_IN_FLIGHT);
+                    ReferenceData.MESSAGE_IN_FLIGHT,ourMessage.getDestinationSegmentId(),currentOwnerId);
             voltExecuteSQL();
 
         } else {
@@ -221,8 +221,8 @@ public class SendMessageUpstream extends VoltProcedure {
             return null;
         }
 
-        ourMessage.setErrorMessage(ReferenceData.MESSAGE_DONE + "");
-        voltQueueSQL(updateMessageStatus, ReferenceData.MESSAGE_DONE, deviceId, ourMessage.getExternallMessageId());
+        ourMessage.setErrorMessage(ReferenceData.MESSAGE_DONE_STRING + "");
+        voltQueueSQL(updateMessageStatus, ReferenceData.MESSAGE_DONE_STRING, deviceId, ourMessage.getExternallMessageId());
 
         String encodedMessage = Base64.getEncoder().encodeToString(ourMessage.asJson(g).getBytes());
 

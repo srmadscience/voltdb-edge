@@ -67,6 +67,7 @@ public class ReferenceData {
     public static final byte ERROR_MISSING_INTERNAL_MESSAGE_ID = 17;
     public static final byte ERROR_MESSAGE_NOT_IN_FLIGHT_IS_ACTIVE = 19;
     public static final byte MESSAGE_DONE = 20;
+    public static final String MESSAGE_DONE_STRING = "DONE";
     public static final byte ERROR_INVALID_SEGMENT_ID = 21;
     public static final byte ERROR_MESSAGE_CANT_BE_SENT_DOWNSTREAM = 22;
 
@@ -90,5 +91,20 @@ public class ReferenceData {
 
         return JsonEncoderImpl.NAME;
     }
+ 
+ public static String getdeviceEncoderClassName(long deviceId) {
+
+     if (deviceId % 2 == 0) {
+
+         return "org.voltse.edge.edgeencoders.TabEncoderImpl";
+     }
+
+     return "org.voltse.edge.edgeencoders.JsonEncoderImpl";
+ }
+ 
+ public static String getdeviceEncoderClassName(MessageIFace theMessage) {
+
+    return getdeviceEncoderClassName(theMessage.getDeviceId());
+ }
 
 }
