@@ -152,7 +152,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                             MessageIFace downstreamRecord = ourDevice.getEncoder().decode(recordAsCSV[2]);
 
-                            msg("Got incoming message " + downstreamRecord.toString());
+                            //msg("Got incoming message " + downstreamRecord.toString());
 
                             long eventAge = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
 
@@ -160,7 +160,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 lagMs = eventAge;
                             }
 
-                            msg(downstreamRecord.getMessageType());
+                            //msg(downstreamRecord.getMessageType());
 
                             if (downstreamRecord instanceof GetStatusMessage) {
                                 GetStatusMessage ourMessage = (GetStatusMessage) downstreamRecord;
@@ -168,7 +168,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                         ourDevice.getMeterReading());
                                 ourMessage.setJsonPayload(g.toJson(mr));
                                 ourMessage.setErrorMessage("OK");
-                                msg(ourMessage.toString());
+                                //msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
                             } else if (downstreamRecord instanceof DisableFeatureMessage) {
@@ -182,7 +182,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
 
-                                msg(ourMessage.toString());
+                               // msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
                             } else if (downstreamRecord instanceof EnableFeatureMessage) {
@@ -196,7 +196,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
                                 ourMessage.setErrorMessage("OK");
-                                msg(ourMessage.toString());
+                                //msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -204,14 +204,14 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 StartMessage ourMessage = (StartMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STARTED");
-                                msg(ourMessage.toString());
+                                //msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
 
                             } else if (downstreamRecord instanceof StopMessage) {
 
                                 StopMessage ourMessage = (StopMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STOPPED");
-                                msg(ourMessage.toString());
+                                //msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -219,7 +219,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 UpgradeFirmwareMessage ourMessage = (UpgradeFirmwareMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("Upgraded " + ourMessage.getPayload().length + " bytes");
-                                msg(ourMessage.toString());
+                                //msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
