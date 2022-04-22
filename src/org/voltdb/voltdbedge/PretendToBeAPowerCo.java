@@ -56,6 +56,8 @@ import org.voltdb.client.NoConnectionsException;
 import org.voltdb.client.NullCallback;
 import org.voltdb.client.ProcCallException;
 import org.voltdb.client.topics.VoltDBKafkaPartitioner;
+import org.voltdb.voltutil.stats.SafeHistogramCache;
+import org.voltdb.voltutil.stats.StatsHistogram;
 import org.voltse.edge.edgeencoders.JsonEncoderImpl;
 import org.voltse.edge.edgeencoders.ModelEncoderIFace;
 import org.voltse.edge.edgeencoders.TabEncoderImpl;
@@ -90,6 +92,7 @@ public class PretendToBeAPowerCo implements Runnable {
     JsonEncoderImpl jsonenc = new JsonEncoderImpl();
     TabEncoderImpl tabenc = new TabEncoderImpl();
     Random r = new Random();
+    SafeHistogramCache shc = SafeHistogramCache.getInstance();
 
     public PretendToBeAPowerCo(Client mainClient, String hostnames, int tps, int duration, int howmany,
             int queryseconds, int powerrco) {
@@ -122,8 +125,7 @@ public class PretendToBeAPowerCo implements Runnable {
 
         int receivedUpstream = 0;
         int sentDownstream = 0;
-        long lagMs = 0;
-
+ 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
 
             long endPassMs = System.currentTimeMillis() + 1000;
@@ -149,12 +151,9 @@ public class PretendToBeAPowerCo implements Runnable {
                         MessageIFace record = jsonenc.decode(recordAsCSV[3]);
                         // msg("Got incoming message " + record.toString());
 
-                        long eventAge = System.currentTimeMillis() - record.getCreateDate().getTime();
+                        shc.reportLatency("upstreamLatency", record.getCreateDate().getTime(), "Latency to send data upstream", 30000);
 
-                        if (eventAge > lagMs) {
-                            lagMs = eventAge;
-                        }
-
+  
                     }
 
                 }
@@ -215,11 +214,12 @@ public class PretendToBeAPowerCo implements Runnable {
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats",
                             "downstreamSent" + powerco, sentDownstream / 60);
 
-                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "lagms" + powerco, lagMs);
-
+                    
+                    getStats(shc,mainClient);
+  
                     receivedUpstream = 0;
                     sentDownstream = 0;
-                    lagMs = 0;
+                   
                     lastStatsTime = System.currentTimeMillis();
                     
                 } catch (Exception e) {
@@ -372,6 +372,31 @@ public class PretendToBeAPowerCo implements Runnable {
 
         kafkaProducer.send(record).get();
 
+    }
+    
+    
+    private static void getStats(SafeHistogramCache statsCache, Client c)
+            throws IOException, NoConnectionsException, ProcCallException {
+        String[] statNames = { "upstreamLatency" };
+
+        StatsHistogram upstreamLatencyHist = statsCache.get("upstreamLatency");
+  
+         reportStats(c, "avg", "avg", "AVG_LATENCY", "upstreamLatency", (long) upstreamLatencyHist.getLatencyAverage());
+   
+        float[] pctiles = { 50, 90, 95, 99, 99.5f, 99.95f, 100 };
+
+        for (String statName : statNames) {
+
+            StatsHistogram aHistogram = statsCache.get(statName);
+
+            for (float pctile : pctiles) {
+                reportStats(c, "lcy", "lcy", "UPSTREAM_LATENCY_" + pctile, "upstreamLatency", aHistogram.getLatencyPct(pctile));
+            }
+
+            long count = (long) aHistogram.getEventTotal();
+
+            reportStats(c, "count", "count", "COUNT_" + statName, "COUNT_" + statName, count);
+        }
     }
 
     private static void reportStats(Client c, String statname, String stathelp, String eventType, String eventName,
