@@ -250,8 +250,8 @@ class TestSendDownstreamWithVolt {
     void testProvison() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, ReferenceData.TEST_JSON_METER_NAME, TEST_LOCATION,
-                    TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID,
+                    ReferenceData.TEST_JSON_METER_NAME, TEST_LOCATION, TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -271,8 +271,8 @@ class TestSendDownstreamWithVolt {
     void testProvisonOtherMeterKind() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, ReferenceData.TEST_DELIM_METER_NAME,
-                    TEST_LOCATION, TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID,
+                    ReferenceData.TEST_DELIM_METER_NAME, TEST_LOCATION, TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -294,8 +294,8 @@ class TestSendDownstreamWithVolt {
         testProvison();
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, ReferenceData.TEST_JSON_METER_NAME, TEST_LOCATION,
-                    TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID,
+                    ReferenceData.TEST_JSON_METER_NAME, TEST_LOCATION, TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -315,8 +315,8 @@ class TestSendDownstreamWithVolt {
     void testProvisonBadLocation() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, ReferenceData.TEST_JSON_METER_NAME,
-                    TEST_BAD_LOCATION, TEST_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID,
+                    ReferenceData.TEST_JSON_METER_NAME, TEST_BAD_LOCATION, TEST_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());
@@ -336,8 +336,8 @@ class TestSendDownstreamWithVolt {
     void testProvisonBadOwner() {
 
         try {
-            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID, ReferenceData.TEST_JSON_METER_NAME, TEST_LOCATION,
-                    TEST_BAD_OWNER);
+            ClientResponse cr = c.callProcedure("ProvisionDevice", GENERIC_DEVICE_ID,
+                    ReferenceData.TEST_JSON_METER_NAME, TEST_LOCATION, TEST_BAD_OWNER);
 
             if (cr.getStatus() != ClientResponse.SUCCESS) {
                 fail(cr.getStatusString());

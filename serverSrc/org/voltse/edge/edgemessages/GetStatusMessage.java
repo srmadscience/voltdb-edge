@@ -12,13 +12,12 @@ public class GetStatusMessage extends BaseMessage {
     }
 
     public GetStatusMessage(long deviceId, long externallMessageId, long latencyMs, String errorMessage,
-            Date createDate, int destinationSegmentId,  long callingOwner,String jsonPayload) {
+            Date createDate, int destinationSegmentId, long callingOwner, String jsonPayload) {
 
         super(deviceId, externallMessageId, GET_STATUS, latencyMs, errorMessage, createDate, destinationSegmentId,
                 callingOwner);
 
         this.jsonPayload = jsonPayload;
-
 
     }
 

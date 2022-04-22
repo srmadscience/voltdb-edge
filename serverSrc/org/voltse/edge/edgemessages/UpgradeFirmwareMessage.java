@@ -22,7 +22,6 @@ public class UpgradeFirmwareMessage extends BaseMessage {
         super(deviceId, externallMessageId, UPGRADE_FIRMWARE, latencyMs, errorMessage, createDate, destinationSegmentId,
                 callingOwner);
 
-
         this.payload = payload;
 
     }

@@ -33,5 +33,4 @@ public class TabEncoderImpl implements ModelEncoderIFace {
         return NAME;
     }
 
-
 }

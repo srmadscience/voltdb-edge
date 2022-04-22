@@ -163,53 +163,52 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                             } else if (downstreamRecord instanceof DisableFeatureMessage) {
                                 DisableFeatureMessage ourMessage = (DisableFeatureMessage) downstreamRecord;
-                                
+
                                 if (ourMessage.isEnabled() & (!ourDevice.getFeature(ourMessage.getFeatureName()))) {
                                     ourMessage.setErrorMessage("Already Disabled");
                                 } else {
                                     ourMessage.setErrorMessage("Enabled");
                                 }
-                                
-                             ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
+
+                                ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
 
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                             } else if (downstreamRecord instanceof EnableFeatureMessage) {
                                 EnableFeatureMessage ourMessage = (EnableFeatureMessage) downstreamRecord;
-                                
+
                                 if (ourMessage.isEnabled() & ourDevice.getFeature(ourMessage.getFeatureName())) {
                                     ourMessage.setErrorMessage("Already Enabled");
                                 } else {
                                     ourMessage.setErrorMessage("Enabled");
                                 }
 
-                                
                                 ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
                                 ourMessage.setErrorMessage("OK");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
-                                
+
                             } else if (downstreamRecord instanceof StartMessage) {
-                                
+
                                 StartMessage ourMessage = (StartMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STARTED");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
-                                
+
                             } else if (downstreamRecord instanceof StopMessage) {
-                                
+
                                 StopMessage ourMessage = (StopMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STOPPED");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
-                                
-                            }else if (downstreamRecord instanceof UpgradeFirmwareMessage) {
-                                
+
+                            } else if (downstreamRecord instanceof UpgradeFirmwareMessage) {
+
                                 UpgradeFirmwareMessage ourMessage = (UpgradeFirmwareMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("Upgraded " + ourMessage.getPayload().length + " bytes");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
-                                
+
                             }
 
                         }

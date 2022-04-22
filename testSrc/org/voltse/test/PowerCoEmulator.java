@@ -78,7 +78,6 @@ public class PowerCoEmulator {
 
         kafkaProducer.send(record).get();
 
-
     }
 
     public MessageIFace receiveJsonPowercoMessage(long externalMessageId) throws Exception {
@@ -111,40 +110,40 @@ public class PowerCoEmulator {
 
         ConsumerRecords<Long, String> consumerRecords = null;
 
-            long startMs = System.currentTimeMillis();
+        long startMs = System.currentTimeMillis();
 
-            long startPoll = System.currentTimeMillis();
-            consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(POLL_DELAY));
-            kafkaPowercoConsumer.commitAsync();
+        long startPoll = System.currentTimeMillis();
+        consumerRecords = kafkaPowercoConsumer.poll(Duration.ofMillis(POLL_DELAY));
+        kafkaPowercoConsumer.commitAsync();
 
-            if (startPoll + 30 < System.currentTimeMillis()) {
-                msg("took " + (System.currentTimeMillis() - startPoll));
+        if (startPoll + 30 < System.currentTimeMillis()) {
+            msg("took " + (System.currentTimeMillis() - startPoll));
+        }
+
+        msg("rows=" + consumerRecords.count());
+
+        Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
+
+        int howMany = 0;
+
+        while (i.hasNext()) {
+            howMany++;
+            ConsumerRecord<Long, String> aRecord = i.next();
+
+            if (aRecord.key() == messageId || messageId == Long.MIN_VALUE) {
+                msg("OK:" + aRecord.toString());
+                msg("took " + (System.currentTimeMillis() - startMs) + "ms howmany=" + howMany);
+                return aRecord;
             }
 
-            msg("rows=" + consumerRecords.count());
-
-            Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
-
-            int howMany = 0;
-
-            while (i.hasNext()) {
-                howMany++;
-                ConsumerRecord<Long, String> aRecord = i.next();
-
-                if (aRecord.key() == messageId || messageId == Long.MIN_VALUE) {
-                    msg("OK:" + aRecord.toString());
-                    msg("took " + (System.currentTimeMillis() - startMs) + "ms howmany=" + howMany);
-                    return aRecord;
-                } 
-
-            }
+        }
 
         fail("No ConsumerRecord found");
         return null;
     }
 
-    private Consumer<Long, String> connectToKafkaConsumer(String commaDelimitedHostnames,
-            String keyDeserializer, String valueSerializer) throws Exception {
+    private Consumer<Long, String> connectToKafkaConsumer(String commaDelimitedHostnames, String keyDeserializer,
+            String valueSerializer) throws Exception {
 
         String[] hostnameArray = commaDelimitedHostnames.split(",");
 
@@ -164,7 +163,7 @@ public class PowerCoEmulator {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + powerCoEmulatorId );
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + powerCoEmulatorId);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
 
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);

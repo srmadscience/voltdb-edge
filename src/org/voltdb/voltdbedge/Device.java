@@ -7,17 +7,17 @@ import org.voltse.edge.edgeencoders.ModelEncoderIFace;
 import org.voltse.edge.edgemessages.MessageIFace;
 
 public class Device {
-    
-   long deviceId;
-    
+
+    long deviceId;
+
     ModelEncoderIFace encoder;
-    
+
     String modelNumber;
-    
+
     ArrayList<MessageIFace> messages = new ArrayList<MessageIFace>();
-    
-    HashMap<String, Boolean> features = new HashMap<String, Boolean> ();
-    
+
+    HashMap<String, Boolean> features = new HashMap<String, Boolean>();
+
     long meterReading = 0;
 
     public Device(long deviceId, ModelEncoderIFace encoder, String modelNumber) {
@@ -27,7 +27,6 @@ public class Device {
         this.modelNumber = modelNumber;
     }
 
- 
     /**
      * @return the deviceId
      */
@@ -56,14 +55,12 @@ public class Device {
         this.encoder = encoder;
     }
 
-
     /**
      * @return the modelNumber
      */
     public String getModelNumber() {
         return modelNumber;
     }
-
 
     /**
      * @param modelNumber the modelNumber to set
@@ -72,14 +69,10 @@ public class Device {
         this.modelNumber = modelNumber;
     }
 
-
     public void addMessage(MessageIFace message) {
         messages.add(message);
-        
+
     }
-
-
-   
 
     /**
      * @return the meterReading
@@ -88,7 +81,6 @@ public class Device {
         return meterReading;
     }
 
-
     /**
      * @param meterReading the meterReading to set
      */
@@ -96,7 +88,6 @@ public class Device {
         this.meterReading = meterReading;
     }
 
-    
     @SuppressWarnings("deprecation")
     public void setFeature(String featureName, boolean set) {
         features.put(featureName, new Boolean(set));
@@ -104,11 +95,11 @@ public class Device {
 
     public boolean getFeature(String featureName) {
         Boolean isEnabled = features.get(featureName);
-        
+
         if (isEnabled == null) {
             return false;
         }
-        
+
         return isEnabled;
     }
 
@@ -131,5 +122,4 @@ public class Device {
         return builder.toString();
     }
 
-
-  }
+}

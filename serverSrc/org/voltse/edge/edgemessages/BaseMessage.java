@@ -314,7 +314,5 @@ public class BaseMessage implements MessageIFace {
 
         return false;
     }
- 
-   
 
 }

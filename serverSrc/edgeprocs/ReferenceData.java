@@ -36,8 +36,7 @@ public class ReferenceData {
     public final static String TEST_JSON_METER_NAME = "MeterTron100";
     public final static String TEST_DELIM_METER_NAME = "HomeMeter100";
 
-
-    public static final  String[] METER_TYPES = {TEST_JSON_METER_NAME, TEST_DELIM_METER_NAME};
+    public static final String[] METER_TYPES = { TEST_JSON_METER_NAME, TEST_DELIM_METER_NAME };
 
     public static final String EDGEMESSAGES = "org.voltse.edge.edgemessages.";
     public static final String EDGEENCODERS = "org.voltse.edge.edgeencoders.";
@@ -78,11 +77,10 @@ public class ReferenceData {
 
     public static String getdeviceEncoding(MessageIFace theMessage) {
 
-       return getdeviceEncoding(theMessage.getDeviceId());
+        return getdeviceEncoding(theMessage.getDeviceId());
     }
 
-
- public static String getdeviceEncoding(long deviceId) {
+    public static String getdeviceEncoding(long deviceId) {
 
         if (deviceId % 2 == 0) {
 
@@ -91,20 +89,20 @@ public class ReferenceData {
 
         return JsonEncoderImpl.NAME;
     }
- 
- public static String getdeviceEncoderClassName(long deviceId) {
 
-     if (deviceId % 2 == 0) {
+    public static String getdeviceEncoderClassName(long deviceId) {
 
-         return "org.voltse.edge.edgeencoders.TabEncoderImpl";
-     }
+        if (deviceId % 2 == 0) {
 
-     return "org.voltse.edge.edgeencoders.JsonEncoderImpl";
- }
- 
- public static String getdeviceEncoderClassName(MessageIFace theMessage) {
+            return "org.voltse.edge.edgeencoders.TabEncoderImpl";
+        }
 
-    return getdeviceEncoderClassName(theMessage.getDeviceId());
- }
+        return "org.voltse.edge.edgeencoders.JsonEncoderImpl";
+    }
+
+    public static String getdeviceEncoderClassName(MessageIFace theMessage) {
+
+        return getdeviceEncoderClassName(theMessage.getDeviceId());
+    }
 
 }

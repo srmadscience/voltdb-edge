@@ -141,7 +141,8 @@ class TestEndToEndWithAbstractedKafka {
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got "
+                            + endStateMessage.getErrorMessage());
 
                 }
 
@@ -204,7 +205,8 @@ class TestEndToEndWithAbstractedKafka {
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got "
+                            + endStateMessage.getErrorMessage());
 
                 }
 
@@ -255,7 +257,8 @@ class TestEndToEndWithAbstractedKafka {
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got "
+                            + endStateMessage.getErrorMessage());
 
                 }
 
@@ -306,7 +309,8 @@ class TestEndToEndWithAbstractedKafka {
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got "
+                            + endStateMessage.getErrorMessage());
 
                 }
 
@@ -370,7 +374,8 @@ class TestEndToEndWithAbstractedKafka {
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got "
+                            + endStateMessage.getErrorMessage());
 
                 }
 
@@ -431,7 +436,8 @@ class TestEndToEndWithAbstractedKafka {
                         .receiveJsonPowercoMessage(originalMessage.getExternallMessageId());
 
                 if (!endStateMessage.getErrorMessage().equals(ReferenceData.MESSAGE_DONE_STRING + "")) {
-                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got " + endStateMessage.getErrorMessage());
+                    fail("Expected " + ReferenceData.MESSAGE_DONE_STRING + ", got "
+                            + endStateMessage.getErrorMessage());
 
                 }
 

@@ -41,12 +41,12 @@ public class DeviceEmulator {
     ModelEncoderIFace tabEncoder = new TabEncoderImpl();
 
     HashMap<String, ModelEncoderIFace> encoders = new HashMap<>();
-    
+
     final long deviceEmulatorId = System.currentTimeMillis();
 
     public DeviceEmulator() throws Exception {
         super();
-      
+
         encoders.put(jsonEncoder.getName(), jsonEncoder);
         encoders.put(tabEncoder.getName(), tabEncoder);
 
@@ -121,7 +121,7 @@ public class DeviceEmulator {
                     msg("OK:" + aRecord.toString());
                     msg("took " + (System.currentTimeMillis() - startMs) + " ms howmany=" + howMany);
                     return aRecord;
-                } 
+                }
 
             }
 
@@ -150,8 +150,8 @@ public class DeviceEmulator {
 
     }
 
-    private Consumer<Long, String> connectToKafkaConsumer(String commaDelimitedHostnames,
-            String keyDeserializer, String valueSerializer) throws Exception {
+    private Consumer<Long, String> connectToKafkaConsumer(String commaDelimitedHostnames, String keyDeserializer,
+            String valueSerializer) throws Exception {
 
         String[] hostnameArray = commaDelimitedHostnames.split(",");
 
@@ -173,9 +173,8 @@ public class DeviceEmulator {
 
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer"+deviceEmulatorId );
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + deviceEmulatorId);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
-
 
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
 
@@ -252,7 +251,7 @@ public class DeviceEmulator {
         }
 
         if (startPoll + 30 < System.currentTimeMillis()) {
-            msg("drain took " + (System.currentTimeMillis() - startPoll) +"ms");
+            msg("drain took " + (System.currentTimeMillis() - startPoll) + "ms");
         }
 
         if (howMany > 1) {

@@ -240,7 +240,8 @@ public class SendMessageDownstream extends VoltProcedure {
         }
 
         // Record messages existence...
-        voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), thisTxId, messageStatus,ourMessage.getDestinationSegmentId(),currentOwnerId);
+        voltQueueSQL(createDeviceMessage, deviceId, ourMessage.getExternallMessageId(), thisTxId, messageStatus,
+                ourMessage.getDestinationSegmentId(), currentOwnerId);
 
         // See if link has capacity
 

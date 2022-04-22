@@ -23,7 +23,6 @@ public class DisableFeatureMessage extends BaseMessage {
 
     }
 
-
     @Override
     public StringBuffer asDelimited(String delimChar) {
         StringBuffer b = super.asDelimited(delimChar);
