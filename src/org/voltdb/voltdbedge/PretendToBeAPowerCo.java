@@ -210,10 +210,10 @@ public class PretendToBeAPowerCo implements Runnable {
             if (lastStatsTime + ONE_MINUTE_MS < System.currentTimeMillis()) {
                 try {
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "upstreamRcd" + powerco,
-                            receivedUpstream);
+                            receivedUpstream / 60);
 
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats",
-                            "downstreamSent" + powerco, sentDownstream);
+                            "downstreamSent" + powerco, sentDownstream / 60);
 
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "lagms" + powerco, lagMs);
 

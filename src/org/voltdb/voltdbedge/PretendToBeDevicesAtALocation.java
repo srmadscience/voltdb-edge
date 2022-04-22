@@ -238,10 +238,10 @@ public class PretendToBeDevicesAtALocation implements Runnable {
             if (lastStatsTime + ONE_MINUTE_MS < System.currentTimeMillis()) {
                 try {
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "upstreamSent" + location,
-                            upstreamSent);
+                            upstreamSent / 60);
 
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats",
-                            "downstreamRecd" + location, downstreamRecd);
+                            "downstreamRecd" + location, downstreamRecd / 60);
 
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "lagms" + location, lagMs);
 
