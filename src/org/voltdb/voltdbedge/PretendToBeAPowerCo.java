@@ -135,7 +135,7 @@ public class PretendToBeAPowerCo implements Runnable {
                         .poll(Duration.ofMillis(POLL_DELAY));
                 kafkaPowercoConsumer.commitAsync();
 
-                receivedUpstream = consumerRecords.count();
+                receivedUpstream += consumerRecords.count();
 
                 if (consumerRecords.count() > 0) {
 
