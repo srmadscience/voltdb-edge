@@ -74,6 +74,7 @@ import edgeprocs.ReferenceData;
 public class PretendToBeDevicesAtALocation implements Runnable {
 
     private static final long POLL_DELAY = 100;
+    private static final long ONE_MINUTE_MS = 60000;
 
     Client mainClient;
     String hostnames;
@@ -114,6 +115,12 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
     @Override
     public void run() {
+
+        long lastStatsTime = System.currentTimeMillis();
+        int downstreamRecd = 0;
+        int upstreamSent = 0;
+        long lagMs = 0;
+
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
             try {
 
@@ -121,10 +128,6 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                 ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(Duration.ofMillis(POLL_DELAY));
                 kafkaDeviceConsumer.commitAsync();
 
-                int downstreamRecd = 0;
-                int upstreamSent = 0;
-                long lagMs = 0;
-                
                 if (consumerRecords.count() > 0) {
 
                     Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
@@ -140,7 +143,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                         // msg("Device=" + aRecord.value());
 
                         if (ourDevice != null) {
-                            
+
                             downstreamRecd++;
 
                             ourDevice.setMeterReading(ourDevice.getMeterReading() + r.nextInt(100));
@@ -150,7 +153,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                             MessageIFace downstreamRecord = ourDevice.getEncoder().decode(recordAsCSV[2]);
 
                             msg("Got incoming message " + downstreamRecord.toString());
-                            
+
                             lagMs = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
 
                             msg(downstreamRecord.getMessageType());
@@ -222,20 +225,32 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     }
 
                 }
-                
-                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "upstreamSent" + location,
-                        upstreamSent) ;
-                
-                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "downstreamRecd" + location,
-                        downstreamRecd) ;
-                
-                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "lagms" + location,
-                        lagMs) ;
-                
 
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+            }
+
+            if (lastStatsTime + ONE_MINUTE_MS < System.currentTimeMillis()) {
+                try {
+                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "upstreamSent" + location,
+                            upstreamSent);
+
+                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats",
+                            "downstreamRecd" + location, downstreamRecd);
+
+                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "lagms" + location, lagMs);
+
+                    downstreamRecd = 0;
+                    upstreamSent = 0;
+
+                    lagMs = 0;
+                    lastStatsTime = System.currentTimeMillis();
+
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -306,7 +321,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
     private void connectToKafkaConsumerAndProducer() {
         try {
 
-                    kafkaDeviceConsumer = connectToKafkaConsumer(hostnames,
+            kafkaDeviceConsumer = connectToKafkaConsumer(hostnames,
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -353,7 +368,6 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
     }
 
-    
     private static void reportStats(Client c, String statname, String stathelp, String eventType, String eventName,
             long statvalue) throws IOException, NoConnectionsException, ProcCallException {
         NullCallback coec = new NullCallback();
@@ -362,7 +376,6 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                 new Date());
 
     }
-
 
     /**
      * Connect to VoltDB using a comma delimited hostname list.

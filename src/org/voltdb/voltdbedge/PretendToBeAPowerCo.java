@@ -65,12 +65,13 @@ import org.voltse.edge.edgemessages.UpgradeFirmwareMessage;
 
 import edgeprocs.ReferenceData;
 
-
 public class PretendToBeAPowerCo implements Runnable {
 
     private static final int LOCATION_COUNT = 2;
 
     private static final long POLL_DELAY = 100;
+
+    private static final long ONE_MINUTE_MS = 60000;
 
     Client mainClient;
     String hostnames;
@@ -116,14 +117,17 @@ public class PretendToBeAPowerCo implements Runnable {
     @Override
     public void run() {
 
+        long txTotal = 0;
+        long lastStatsTime = System.currentTimeMillis();
+
+        int receivedUpstream = 0;
+        int sentDownstream = 0;
+        long lagMs = 0;
+
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
-            
-            int receivedUpstream = 0;
-            int sentDownstream = 0;
-            long lagMs = 0;
-            
+
             long endPassMs = System.currentTimeMillis() + 1000;
-            
+
             try {
 
                 // See if anyone has contacted us
@@ -131,9 +135,8 @@ public class PretendToBeAPowerCo implements Runnable {
                         .poll(Duration.ofMillis(POLL_DELAY));
                 kafkaPowercoConsumer.commitAsync();
 
-                
                 receivedUpstream = consumerRecords.count();
-                
+
                 if (consumerRecords.count() > 0) {
 
                     Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
@@ -144,16 +147,20 @@ public class PretendToBeAPowerCo implements Runnable {
                         String[] recordAsCSV = aRecord.value().split(",");
                         recordAsCSV[3] = new String(Base64.getDecoder().decode(recordAsCSV[3].getBytes()));
                         MessageIFace record = jsonenc.decode(recordAsCSV[3]);
-                        //msg("Got incoming message " + record.toString());
-                        
-                        lagMs = System.currentTimeMillis() - record.getCreateDate().getTime();
+                        // msg("Got incoming message " + record.toString());
+
+                        long eventAge = System.currentTimeMillis() - record.getCreateDate().getTime();
+
+                        if (eventAge > lagMs) {
+                            lagMs = eventAge;
+                        }
 
                     }
 
                 }
 
                 for (int i = 0; i < tps; i++) {
-                    
+
                     sentDownstream++;
 
                     // find a device to talk to
@@ -184,27 +191,41 @@ public class PretendToBeAPowerCo implements Runnable {
 
                     testDevice.addMessage(message);
                     sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, powerco, message);
-                    
+
                     if (System.currentTimeMillis() > endPassMs) {
                         break;
                     }
 
+                    if (++txTotal % 100000 == 0) {
+                        msg(txTotal + " events processed");
+                    }
+
                 }
 
-            
-            
-                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "upstreamRcd" + powerco,
-                        receivedUpstream) ;
-                
-                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "downstreamSent" + powerco,
-                        sentDownstream) ;
-                
-                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "lagms" + powerco,
-                        lagMs) ;
-                
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+            }
+
+            if (lastStatsTime + ONE_MINUTE_MS < System.currentTimeMillis()) {
+                try {
+                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "upstreamRcd" + powerco,
+                            receivedUpstream);
+
+                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats",
+                            "downstreamSent" + powerco, sentDownstream);
+
+                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "lagms" + powerco, lagMs);
+
+                    receivedUpstream = 0;
+                    sentDownstream = 0;
+                    lagMs = 0;
+                    lastStatsTime = System.currentTimeMillis();
+                    
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
 
         }
@@ -219,7 +240,7 @@ public class PretendToBeAPowerCo implements Runnable {
             deviceCheck.getResults()[0].advanceRow();
 
             if (deviceCheck.getResults()[0].getLong("HOW_MANY") != howMany) {
-                
+
                 msg("Found " + deviceCheck.getResults()[0].getLong("HOW_MANY") + " devices");
 
                 TransactionSpeedRegulator tsm = new TransactionSpeedRegulator(tpMs,
@@ -238,8 +259,7 @@ public class PretendToBeAPowerCo implements Runnable {
                         NullCallback ncb = new NullCallback();
 
                         ClientResponse cr = mainClient.callProcedure("ProvisionDevice", nextDeviceId,
-                                ReferenceData.METER_TYPES[(nextDeviceId + 1) % 2], 
-                                r.nextInt(LOCATION_COUNT), powerco);
+                                ReferenceData.METER_TYPES[(nextDeviceId + 1) % 2], r.nextInt(LOCATION_COUNT), powerco);
 
                         if (cr.getStatus() != ClientResponse.SUCCESS) {
                             msg(cr.getAppStatusString());
@@ -353,7 +373,7 @@ public class PretendToBeAPowerCo implements Runnable {
         kafkaProducer.send(record).get();
 
     }
-    
+
     private static void reportStats(Client c, String statname, String stathelp, String eventType, String eventName,
             long statvalue) throws IOException, NoConnectionsException, ProcCallException {
         NullCallback coec = new NullCallback();
@@ -362,7 +382,6 @@ public class PretendToBeAPowerCo implements Runnable {
                 new Date());
 
     }
-
 
     /**
      * Connect to VoltDB using a comma delimited hostname list.
@@ -472,7 +491,7 @@ public class PretendToBeAPowerCo implements Runnable {
         try {
             Client c = connectVoltDB(hostnames);
 
-            //deleteOldData(c, powerrco);
+            // deleteOldData(c, powerrco);
 
             Thread thread = new Thread(
                     new PretendToBeAPowerCo(c, hostnames, tps, duration, howmany, queryseconds, powerrco));
