@@ -438,7 +438,7 @@ public class PretendToBeAPowerCo implements Runnable {
         try {
             Client c = connectVoltDB(hostnames);
 
-            deleteOldData(c, powerrco);
+            //deleteOldData(c, powerrco);
 
             Thread thread = new Thread(
                     new PretendToBeAPowerCo(c, hostnames, tps, duration, howmany, queryseconds, powerrco));
