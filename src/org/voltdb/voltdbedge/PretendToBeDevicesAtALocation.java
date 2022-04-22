@@ -134,12 +134,6 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                         String[] recordAsCSV = aRecord.value().split(",");
 
-                        msg(aRecord.value());
-
-                        for (int j = 0; j < recordAsCSV.length; j++) {
-                            msg(j + ": " + recordAsCSV[j]);
-                        }
-
                         long deviceId = Integer.parseInt(recordAsCSV[1]);
                         Device ourDevice = deviceMap.get(deviceId);
 

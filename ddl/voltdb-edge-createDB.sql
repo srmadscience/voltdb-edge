@@ -50,6 +50,7 @@ CREATE TABLE device_messages
 ,status_code varchar(5) not null
 ,segment_id bigint not null 
 ,current_owner_id bigint not null
+,completion_time_ms bigint
 ,primary key (device_id,message_id));
 
 PARTITION TABLE device_messages ON COLUMN device_id;
@@ -230,10 +231,8 @@ select 'bl_message_activity' statname
 from device_message_activity 
 where message_date = dateadd(minute,-1,truncate(minute,now));
 --
-select 'bl_message_activity' statname
+select 'bl_message_activity_0minago_'||status_code statname
 , 'bl_tmessage_activity' stathelp 
-,'0minago' timeperiod
-,status_code 
 ,segment_id  
 ,current_owner_id
 , how_many statvalue

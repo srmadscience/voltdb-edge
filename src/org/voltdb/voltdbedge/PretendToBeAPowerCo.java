@@ -144,7 +144,7 @@ public class PretendToBeAPowerCo implements Runnable {
                         String[] recordAsCSV = aRecord.value().split(",");
                         recordAsCSV[3] = new String(Base64.getDecoder().decode(recordAsCSV[3].getBytes()));
                         MessageIFace record = jsonenc.decode(recordAsCSV[3]);
-                        msg("Got incoming message " + record.toString());
+                        //msg("Got incoming message " + record.toString());
                         
                         lagMs = System.currentTimeMillis() - record.getCreateDate().getTime();
 
