@@ -31,12 +31,12 @@ CREATE TABLE devices
 
 PARTITION TABLE devices ON COLUMN device_id;
 
+CREATE INDEX devixes_idx1 ON devices (location_id);
+
 CREATE VIEW device_summary AS
 SELECT location_id, current_owner_id, count(*) how_many
 FROM   devices
 GROUP BY location_id, current_owner_id;
-
-CREATE INDEX devixes_idx1 ON devices (location_id);
 
 CREATE TABLE models
 (model_number varchar(30) not null primary key

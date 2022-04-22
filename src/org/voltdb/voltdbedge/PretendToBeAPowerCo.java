@@ -65,6 +65,7 @@ import org.voltse.edge.edgemessages.UpgradeFirmwareMessage;
 
 import edgeprocs.ReferenceData;
 
+
 public class PretendToBeAPowerCo implements Runnable {
 
     private static final int LOCATION_COUNT = 2;
@@ -117,6 +118,9 @@ public class PretendToBeAPowerCo implements Runnable {
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
             
+            int receivedUpstream = 0;
+            int sentDownstream = 0;
+            
             long endPassMs = System.currentTimeMillis() + 1000;
             
             try {
@@ -126,6 +130,9 @@ public class PretendToBeAPowerCo implements Runnable {
                         .poll(Duration.ofMillis(POLL_DELAY));
                 kafkaPowercoConsumer.commitAsync();
 
+                
+                receivedUpstream = consumerRecords.count();
+                
                 if (consumerRecords.count() > 0) {
 
                     Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
@@ -143,6 +150,8 @@ public class PretendToBeAPowerCo implements Runnable {
                 }
 
                 for (int i = 0; i < tps; i++) {
+                    
+                    sentDownstream++;
 
                     // find a device to talk to
                     Device testDevice = deviceMap.get(deviceIds[r.nextInt(deviceIds.length)]);
@@ -179,10 +188,19 @@ public class PretendToBeAPowerCo implements Runnable {
 
                 }
 
+            
+            
+                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "upstreamRcd" + powerco,
+                        receivedUpstream) ;
+                
+                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "downstreamSent" + powerco,
+                        sentDownstream) ;
+                
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+
         }
 
     }
@@ -329,6 +347,16 @@ public class PretendToBeAPowerCo implements Runnable {
         kafkaProducer.send(record).get();
 
     }
+    
+    private static void reportStats(Client c, String statname, String stathelp, String eventType, String eventName,
+            long statvalue) throws IOException, NoConnectionsException, ProcCallException {
+        NullCallback coec = new NullCallback();
+
+        c.callProcedure(coec, "promBL_latency_stats.UPSERT", statname, stathelp, eventType, eventName, statvalue,
+                new Date());
+
+    }
+
 
     /**
      * Connect to VoltDB using a comma delimited hostname list.

@@ -121,6 +121,9 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                 ConsumerRecords<Long, String> consumerRecords = kafkaDeviceConsumer.poll(Duration.ofMillis(POLL_DELAY));
                 kafkaDeviceConsumer.commitAsync();
 
+                int downstreamRecd = 0;
+                int upstreamSent = 0;
+                
                 if (consumerRecords.count() > 0) {
 
                     Iterator<ConsumerRecord<Long, String>> i = consumerRecords.iterator();
@@ -142,6 +145,8 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                         // msg("Device=" + aRecord.value());
 
                         if (ourDevice != null) {
+                            
+                            downstreamRecd++;
 
                             ourDevice.setMeterReading(ourDevice.getMeterReading() + r.nextInt(100));
 
@@ -161,6 +166,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 ourMessage.setErrorMessage("OK");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
+                                upstreamSent++;
                             } else if (downstreamRecord instanceof DisableFeatureMessage) {
                                 DisableFeatureMessage ourMessage = (DisableFeatureMessage) downstreamRecord;
 
@@ -174,6 +180,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
+                                upstreamSent++;
                             } else if (downstreamRecord instanceof EnableFeatureMessage) {
                                 EnableFeatureMessage ourMessage = (EnableFeatureMessage) downstreamRecord;
 
@@ -187,6 +194,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 ourMessage.setErrorMessage("OK");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
+                                upstreamSent++;
 
                             } else if (downstreamRecord instanceof StartMessage) {
 
@@ -201,6 +209,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 ourMessage.setErrorMessage("STOPPED");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
+                                upstreamSent++;
 
                             } else if (downstreamRecord instanceof UpgradeFirmwareMessage) {
 
@@ -208,6 +217,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 ourMessage.setErrorMessage("Upgraded " + ourMessage.getPayload().length + " bytes");
                                 msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
+                                upstreamSent++;
 
                             }
 
@@ -215,6 +225,14 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     }
 
                 }
+                
+                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "upstreamSent" + location,
+                        upstreamSent) ;
+                
+                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "downstreamRecd" + location,
+                        downstreamRecd) ;
+                
+
 
             } catch (Exception e) {
                 // TODO Auto-generated catch block
@@ -335,6 +353,17 @@ public class PretendToBeDevicesAtALocation implements Runnable {
         }
 
     }
+
+    
+    private static void reportStats(Client c, String statname, String stathelp, String eventType, String eventName,
+            long statvalue) throws IOException, NoConnectionsException, ProcCallException {
+        NullCallback coec = new NullCallback();
+
+        c.callProcedure(coec, "promBL_latency_stats.UPSERT", statname, stathelp, eventType, eventName, statvalue,
+                new Date());
+
+    }
+
 
     /**
      * Connect to VoltDB using a comma delimited hostname list.
