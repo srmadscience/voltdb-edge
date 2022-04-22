@@ -6,5 +6,7 @@ cd /home/ubuntu
 cd voltdb-edge/scripts
 
 sleep 120
-sqlcmd --servers=`cat $HOME/.vdbhostnames` < ../ddl/voltdb-edge-createDB.sql
+cd ../ddl/
+sqlcmd --servers=`cat $HOME/.vdbhostnames` < voltdb-edge-createDB.sql
+cd ../scripts
 java -jar $HOME/bin/addtodeploymentdotxml.jar `cat $HOME/.vdbhostnames` deployment topics.xml

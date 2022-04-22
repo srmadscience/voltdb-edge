@@ -31,6 +31,11 @@ CREATE TABLE devices
 
 PARTITION TABLE devices ON COLUMN device_id;
 
+CREATE VIEW device_summary AS
+SELECT location_id, current_owner_id, count(*) how_many
+FROM   devices
+GROUP BY location_id, current_owner_id;
+
 CREATE INDEX devixes_idx1 ON devices (location_id);
 
 CREATE TABLE models
@@ -197,6 +202,12 @@ AND   d.current_owner_id = ?
 AND   d.model_number = m.model_number
 ORDER BY d.device_id;
 
+CREATE PROCEDURE GetDevicesForPowercoTotal
+AS
+SELECT count(*) how_many
+FROM   device_summary d
+WHERE  d.current_owner_id = ?;
+
 CREATE PROCEDURE GetStats__promBL AS
 BEGIN
 --
@@ -211,12 +222,25 @@ select  'bl_transaction_status' statname
 --
 select 'bl_message_activity' statname
 , 'bl_tmessage_activity' stathelp 
+,'1minago' timeperiod
 ,status_code 
 ,segment_id  
 ,current_owner_id
 , how_many statvalue
 from device_message_activity 
 where message_date = dateadd(minute,-1,truncate(minute,now));
+--
+select 'bl_message_activity' statname
+, 'bl_tmessage_activity' stathelp 
+,'0minago' timeperiod
+,status_code 
+,segment_id  
+,current_owner_id
+, how_many statvalue
+from device_message_activity 
+where message_date = truncate(minute,now)
+and   status_code = 'MIF';
+--
 END;
 
 END_OF_BATCH

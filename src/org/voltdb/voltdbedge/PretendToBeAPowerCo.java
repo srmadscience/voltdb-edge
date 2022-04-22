@@ -67,7 +67,7 @@ import edgeprocs.ReferenceData;
 
 public class PretendToBeAPowerCo implements Runnable {
 
-    private static final int LOCATION_COUNT = 16;
+    private static final int LOCATION_COUNT = 2;
 
     private static final long POLL_DELAY = 100;
 
@@ -116,6 +116,9 @@ public class PretendToBeAPowerCo implements Runnable {
     public void run() {
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
+            
+            long endPassMs = System.currentTimeMillis() + 1000;
+            
             try {
 
                 // See if anyone has contacted us
@@ -169,6 +172,10 @@ public class PretendToBeAPowerCo implements Runnable {
 
                     testDevice.addMessage(message);
                     sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, powerco, message);
+                    
+                    if (System.currentTimeMillis() > endPassMs) {
+                        break;
+                    }
 
                 }
 
@@ -183,66 +190,77 @@ public class PretendToBeAPowerCo implements Runnable {
     protected void createDevices(Client mainClient, int howMany, int tpMs, int powerco)
             throws InterruptedException, IOException, NoConnectionsException {
 
-        Random r = new Random();
+        try {
+            ClientResponse deviceCheck = mainClient.callProcedure("GetDevicesForPowercoTotal", powerco);
+            deviceCheck.getResults()[0].advanceRow();
 
-        TransactionSpeedRegulator tsm = new TransactionSpeedRegulator(tpMs, TransactionSpeedRegulator.NO_END_DATE);
+            if (deviceCheck.getResults()[0].getLong("HOW_MANY") != howMany) {
 
-        msg("Creating " + howMany + " devices");
+                TransactionSpeedRegulator tsm = new TransactionSpeedRegulator(tpMs,
+                        TransactionSpeedRegulator.NO_END_DATE);
 
-        for (int i = 0; i < howMany; i++) {
+                msg("Creating " + howMany + " devices");
 
-            try {
+                for (int i = 0; i < howMany; i++) {
 
-                int nextDeviceId = i + (10000000 * powerco);
+                    try {
 
-                tsm.waitIfNeeded();
+                        int nextDeviceId = i + (10000000 * powerco);
 
-                NullCallback ncb = new NullCallback();
+                        tsm.waitIfNeeded();
 
-                ClientResponse cr = mainClient.callProcedure("ProvisionDevice", nextDeviceId,
-                        ReferenceData.METER_TYPES[(nextDeviceId + 1) % 2], 0, /* r.nextInt(LOCATION_COUNT) */ powerco);
+                        NullCallback ncb = new NullCallback();
 
-                if (cr.getStatus() != ClientResponse.SUCCESS) {
-                    msg(cr.getAppStatusString());
+                        ClientResponse cr = mainClient.callProcedure("ProvisionDevice", nextDeviceId,
+                                ReferenceData.METER_TYPES[(nextDeviceId + 1) % 2], 
+                                r.nextInt(LOCATION_COUNT), powerco);
+
+                        if (cr.getStatus() != ClientResponse.SUCCESS) {
+                            msg(cr.getAppStatusString());
+                        }
+
+                    } catch (Exception e) {
+                        fail(e.getMessage());
+                    }
+
                 }
 
-            } catch (Exception e) {
-                fail(e.getMessage());
+                mainClient.drain();
+                msg("Creating " + howMany + " devices ... done");
+            } else {
+                msg(howMany + " devices already exist");
             }
 
-        }
+            deviceIds = new long[howMany];
+            int deviceIdEntry = 0;
 
-        mainClient.drain();
-        msg("Creating " + howMany + " devices ... done");
+            try {
+                ClientResponse cr = mainClient.callProcedure("GetDevicesForPowerco", powerco);
 
-        deviceIds = new long[howMany];
-        int deviceIdEntry = 0;
+                while (cr.getResults()[0].advanceRow()) {
 
-        try {
-            ClientResponse cr = mainClient.callProcedure("GetDevicesForPowerco", powerco);
+                    Device newDevice = new Device(cr.getResults()[0].getLong("DEVICE_ID"),
+                            encoders.get(cr.getResults()[0].getString("encoder_class_name")),
+                            cr.getResults()[0].getString("MODEL_NUMBER"));
 
-            while (cr.getResults()[0].advanceRow()) {
+                    deviceMap.put(newDevice.getDeviceId(), newDevice);
+                    deviceIds[deviceIdEntry++] = newDevice.getDeviceId();
 
-                Device newDevice = new Device(cr.getResults()[0].getLong("DEVICE_ID"),
-                        encoders.get(cr.getResults()[0].getString("encoder_class_name")),
-                        cr.getResults()[0].getString("MODEL_NUMBER"));
+                }
 
-                deviceMap.put(newDevice.getDeviceId(), newDevice);
-                deviceIds[deviceIdEntry++] = newDevice.getDeviceId();
-
+            } catch (IOException | ProcCallException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
 
-        } catch (IOException | ProcCallException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (Exception e) {
+            fail(e.getMessage());
         }
 
     }
 
     private Consumer<Long, String> connectToKafkaConsumer(String commaDelimitedHostnames, String keyDeserializer,
             String valueSerializer) throws Exception {
-
-      
 
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, commaDelimitedHostnames);
@@ -263,7 +281,7 @@ public class PretendToBeAPowerCo implements Runnable {
 
     private void connectToKafkaConsumerAndProducer() {
         try {
-            
+
             String[] hostnameArray = hostnames.split(",");
 
             StringBuffer kafkaBrokers = new StringBuffer();
@@ -275,7 +293,6 @@ public class PretendToBeAPowerCo implements Runnable {
                     kafkaBrokers.append(',');
                 }
             }
-
 
             kafkaPowercoConsumer = connectToKafkaConsumer(kafkaBrokers.toString(),
                     "org.apache.kafka.common.serialization.LongDeserializer",

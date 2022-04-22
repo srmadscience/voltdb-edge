@@ -6,8 +6,10 @@ DROP PROCEDURE GetDevice IF EXISTS;
 DROP PROCEDURE GetDeviceMessage IF EXISTS;
 DROP PROCEDURE GetDevicesForLocation IF EXISTS;
 DROP PROCEDURE GetDevicesForPowerco IF EXISTS;
+DROP PROCEDUERE GetDevicesForPowercoTotal IF EXISTS;
 DROP PROCEDURE GetStats__promBL IF EXISTS;
 
+DROP VIEW device_summary IF EXISTS;
 DROP VIEW device_message_summary IF EXISTS;
 DROP VIEW device_message_activity IF EXISTS;
 
