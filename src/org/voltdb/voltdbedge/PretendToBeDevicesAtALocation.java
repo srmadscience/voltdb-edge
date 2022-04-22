@@ -154,7 +154,11 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                             msg("Got incoming message " + downstreamRecord.toString());
 
-                            lagMs = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
+                            long eventAge = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
+
+                            if (eventAge > lagMs) {
+                                lagMs = eventAge;
+                            }
 
                             msg(downstreamRecord.getMessageType());
 
