@@ -123,6 +123,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                 int downstreamRecd = 0;
                 int upstreamSent = 0;
+                long lagMs = 0;
                 
                 if (consumerRecords.count() > 0) {
 
@@ -155,6 +156,8 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                             MessageIFace downstreamRecord = ourDevice.getEncoder().decode(recordAsCSV[2]);
 
                             msg("Got incoming message " + downstreamRecord.toString());
+                            
+                            lagMs = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
 
                             msg(downstreamRecord.getMessageType());
 
@@ -232,7 +235,9 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                 reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "downstreamRecd" + location,
                         downstreamRecd) ;
                 
-
+                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "lagms" + location,
+                        lagMs) ;
+                
 
             } catch (Exception e) {
                 // TODO Auto-generated catch block

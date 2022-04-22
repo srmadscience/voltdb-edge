@@ -120,6 +120,7 @@ public class PretendToBeAPowerCo implements Runnable {
             
             int receivedUpstream = 0;
             int sentDownstream = 0;
+            long lagMs = 0;
             
             long endPassMs = System.currentTimeMillis() + 1000;
             
@@ -144,6 +145,8 @@ public class PretendToBeAPowerCo implements Runnable {
                         recordAsCSV[3] = new String(Base64.getDecoder().decode(recordAsCSV[3].getBytes()));
                         MessageIFace record = jsonenc.decode(recordAsCSV[3]);
                         msg("Got incoming message " + record.toString());
+                        
+                        lagMs = System.currentTimeMillis() - record.getCreateDate().getTime();
 
                     }
 
@@ -195,6 +198,9 @@ public class PretendToBeAPowerCo implements Runnable {
                 
                 reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "downstreamSent" + powerco,
                         sentDownstream) ;
+                
+                reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats", "lagms" + powerco,
+                        lagMs) ;
                 
             } catch (Exception e) {
                 // TODO Auto-generated catch block
