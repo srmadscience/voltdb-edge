@@ -289,7 +289,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
     private void connectToKafkaConsumerAndProducer() {
         try {
 
-            kafkaDeviceConsumer = connectToKafkaConsumer("localhost",
+                    kafkaDeviceConsumer = connectToKafkaConsumer(hostnames,
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -302,7 +302,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
         }
 
         try {
-            kafkaProducer = connectToKafkaProducer("localhost", "org.apache.kafka.common.serialization.LongSerializer",
+            kafkaProducer = connectToKafkaProducer(hostnames, "org.apache.kafka.common.serialization.LongSerializer",
                     "org.apache.kafka.common.serialization.StringSerializer");
         } catch (Exception e) {
             msg(e.getMessage());

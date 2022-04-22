@@ -242,20 +242,10 @@ public class PretendToBeAPowerCo implements Runnable {
     private Consumer<Long, String> connectToKafkaConsumer(String commaDelimitedHostnames, String keyDeserializer,
             String valueSerializer) throws Exception {
 
-        String[] hostnameArray = commaDelimitedHostnames.split(",");
-
-        StringBuffer kafkaBrokers = new StringBuffer();
-        for (int i = 0; i < hostnameArray.length; i++) {
-            kafkaBrokers.append(hostnameArray[i]);
-            kafkaBrokers.append(":9092");
-
-            if (i < (hostnameArray.length - 1)) {
-                kafkaBrokers.append(',');
-            }
-        }
+      
 
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers.toString());
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, commaDelimitedHostnames);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
@@ -273,8 +263,21 @@ public class PretendToBeAPowerCo implements Runnable {
 
     private void connectToKafkaConsumerAndProducer() {
         try {
+            
+            String[] hostnameArray = hostnames.split(",");
 
-            kafkaPowercoConsumer = connectToKafkaConsumer("localhost",
+            StringBuffer kafkaBrokers = new StringBuffer();
+            for (int i = 0; i < hostnameArray.length; i++) {
+                kafkaBrokers.append(hostnameArray[i]);
+                kafkaBrokers.append(":9092");
+
+                if (i < (hostnameArray.length - 1)) {
+                    kafkaBrokers.append(',');
+                }
+            }
+
+
+            kafkaPowercoConsumer = connectToKafkaConsumer(kafkaBrokers.toString(),
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -287,7 +290,7 @@ public class PretendToBeAPowerCo implements Runnable {
         }
 
         try {
-            kafkaProducer = connectToKafkaProducer("localhost", "org.apache.kafka.common.serialization.LongSerializer",
+            kafkaProducer = connectToKafkaProducer(hostnames, "org.apache.kafka.common.serialization.LongSerializer",
                     "org.apache.kafka.common.serialization.StringSerializer");
         } catch (Exception e) {
             msg(e.getMessage());
