@@ -237,6 +237,17 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
             if (lastStatsTime + ONE_MINUTE_MS < System.currentTimeMillis()) {
                 try {
+                    // See if number of devices has changed
+                    ClientResponse deviceCheck = mainClient.callProcedure("GetDevicesForLocationTotal", location);
+                    deviceCheck.getResults()[0].advanceRow();
+
+                    if (deviceCheck.getResults()[0].getLong("HOW_MANY") != deviceIds.length) {
+                        
+                        msg("Refrshing Device List");
+                        getDevices(mainClient, location);
+                        
+                    }
+                    
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "upstreamSent" + location,
                             upstreamSent / 60);
 

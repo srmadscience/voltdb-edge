@@ -187,7 +187,7 @@ FROM   devices d
    ,   locations l
    ,   models m
 WHERE d.location_id = l.location_id
-AND   l.segment_id = ?
+AND   l.location_id = ?
 AND   d.model_number = m.model_number
 ORDER BY d.device_id;
 
@@ -208,6 +208,12 @@ AS
 SELECT count(*) how_many
 FROM   device_summary d
 WHERE  d.current_owner_id = ?;
+
+CREATE PROCEDURE GetDevicesForLocationTotal
+AS
+SELECT count(*) how_many
+FROM   device_summary d
+WHERE  d.location_id = ?;
 
 CREATE PROCEDURE GetStats__promBL AS
 BEGIN
