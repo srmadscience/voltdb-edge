@@ -163,7 +163,7 @@ public class PretendToBeAPowerCo implements Runnable {
                     sentDownstream++;
 
                     // find a device to talk to
-                    Device testDevice = deviceMap.get(deviceIds[r.nextInt(deviceIds.length)]);
+                    Device testDevice = deviceMap.get(deviceIds[r.nextInt(deviceIds.length) + + (10000000 * powerco)]);
 
                     MessageIFace message = null;
 

@@ -1,10 +1,22 @@
 <topics enabled="true">
+<topic name="downstream_0_topic" procedure="SendMessageDownstream">
+</topic><topic name="upstream_0_topic" procedure="SendMessageUpstream">
+<property name="producer.parameters.includeKey">true</property> 
+</topic>
 <topic name="downstream_1_topic" procedure="SendMessageDownstream">
 </topic><topic name="upstream_1_topic" procedure="SendMessageUpstream">
 <property name="producer.parameters.includeKey">true</property> 
 </topic>
 <topic name="segment_0_topic"/>
 <topic name="segment_1_topic"/>
+<topic name="segment_2_topic"/>
+<topic name="segment_3_topic"/>
+<topic name="segment_4_topic"/>
+<topic name="segment_5_topic"/>
+<topic name="segment_6_topic"/>
+<topic name="segment_7_topic"/>
+<topic name="segment_8_topic"/>
+<topic name="segment_9_topic"/>
 <topic name="powerco_0_topic"/>
 <topic name="powerco_1_topic"/>
 <topic name="error_topic"/>

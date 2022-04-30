@@ -63,19 +63,52 @@ public class SendMessageDownstream extends VoltProcedure {
             + "VALUES "
             + "(?,NOW,?,?,?,?,?);");
 
+     public static final SQLStmt reportError  = new SQLStmt("INSERT INTO error_stream "
+            + "(message_id,device_id,error_code,event_kind,payload) "
+            + "VALUES (?,?,?,?,?);");
+
+
     public static final SQLStmt insertIntoStream0 = new SQLStmt(
             "INSERT INTO segment_0_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
     public static final SQLStmt insertIntoStream1 = new SQLStmt(
             "INSERT INTO segment_1_stream(message_id, device_id, payload) VALUES (?,?,?);");
+    
+    public static final SQLStmt insertIntoStream2 = new SQLStmt(
+            "INSERT INTO segment_2_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
-    public static final SQLStmt reportError  = new SQLStmt("INSERT INTO error_stream "
-            + "(message_id,device_id,error_code,event_kind,payload) "
-            + "VALUES (?,?,?,?,?);");
+ 
+    public static final SQLStmt insertIntoStream3 = new SQLStmt(
+            "INSERT INTO segment_3_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
-    public static final SQLStmt[] downstreamInserts = {insertIntoStream0, insertIntoStream1};
+ 
+    public static final SQLStmt insertIntoStream4 = new SQLStmt(
+            "INSERT INTO segment_4_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
-	// @formatter:on
+ 
+    public static final SQLStmt insertIntoStream5= new SQLStmt(
+            "INSERT INTO segment_5_stream(message_id, device_id, payload) VALUES (?,?,?);");
+ 
+    public static final SQLStmt insertIntoStream6 = new SQLStmt(
+            "INSERT INTO segment_6_stream(message_id, device_id, payload) VALUES (?,?,?);");
+
+ 
+    public static final SQLStmt insertIntoStream7 = new SQLStmt(
+            "INSERT INTO segment_7_stream(message_id, device_id, payload) VALUES (?,?,?);");
+
+ 
+    public static final SQLStmt insertIntoStream8 = new SQLStmt(
+            "INSERT INTO segment_8_stream(message_id, device_id, payload) VALUES (?,?,?);");
+
+    public static final SQLStmt insertIntoStream9 = new SQLStmt(
+            "INSERT INTO segment_9_stream(message_id, device_id, payload) VALUES (?,?,?);");
+
+    public static final SQLStmt[] downstreamInserts = {insertIntoStream0, insertIntoStream1
+            , insertIntoStream2,insertIntoStream3, insertIntoStream4, insertIntoStream5
+            , insertIntoStream6, insertIntoStream7, insertIntoStream8, insertIntoStream9};
+
+    
+    // @formatter:on
 
     Gson g = new Gson();
 

@@ -11,10 +11,13 @@ LOC=0
 
 cd ../jars 
 
+kill `ps -deaf | grep java | grep voltdb-edge | awk '{ print $2 }'` 2> /dev/null
+sleep 5
+
 while
 	[ $PCO -le $POWERCOS ]
 do
-	java -jar voltdb-edge-powerco.jar `cat $HOME/.vdbhostnames`  ${TPS} ${DURATION} ${METERS} ${QUERYSECONDS}  $PCO > powerrco_${PCO}.lst  &
+	java -jar voltdb-edge-powerco.jar `cat $HOME/.vdbhostnames`  ${TPS} ${DURATION} ${METERS} ${QUERYSECONDS}  $PCO > powerco_${PCO}.lst  &
 	PCO=`expr $PCO + 1`
 done
 

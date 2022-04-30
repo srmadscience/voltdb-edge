@@ -51,9 +51,14 @@ CREATE TABLE device_messages
 ,segment_id bigint not null 
 ,current_owner_id bigint not null
 ,completion_time_ms bigint
-,primary key (device_id,message_id));
+,ttl_date timestamp 
+,primary key (device_id,message_id))
+USING TTL 1 HOUR ON COLUMN ttl_date;
 
-PARTITION TABLE device_messages ON COLUMN device_id;
+PARTITION TABLE device_messages ON COLUMN ttl_date;
+
+CREATE INDEX dm_ix1 ON device_messages(message_date);
+
 
 CREATE VIEW device_message_summary AS
 SELECT status_code, count(*) how_many
@@ -205,13 +210,13 @@ ORDER BY d.device_id;
 
 CREATE PROCEDURE GetDevicesForPowercoTotal
 AS
-SELECT count(*) how_many
+SELECT sum(how_many) how_many
 FROM   device_summary d
 WHERE  d.current_owner_id = ?;
 
 CREATE PROCEDURE GetDevicesForLocationTotal
 AS
-SELECT count(*) how_many
+SELECT sum(how_many) how_many
 FROM   device_summary d
 WHERE  d.location_id = ?;
 
