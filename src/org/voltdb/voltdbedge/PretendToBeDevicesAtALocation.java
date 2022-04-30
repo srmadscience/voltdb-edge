@@ -243,7 +243,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                     if (deviceCheck.getResults()[0].getLong("HOW_MANY") != deviceIds.length) {
                         
-                        msg("Refreshing Device List");
+                        msg("Refreshing Device List can see " + deviceCheck.getResults()[0].getLong("HOW_MANY") + " but only know about" + deviceIds.length);
                         getDevices(mainClient, location);
                         msg("going back to listening for requests");
                         
