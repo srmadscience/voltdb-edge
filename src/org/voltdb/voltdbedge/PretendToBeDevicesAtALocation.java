@@ -243,10 +243,13 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                     if (deviceCheck.getResults()[0].getLong("HOW_MANY") != deviceIds.length) {
                         
-                        msg("Refrshing Device List");
+                        msg("Refreshing Device List");
                         getDevices(mainClient, location);
+                        msg("going back to listening for requests");
                         
                     }
+                    
+                    // log stats
                     
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "upstreamSent" + location,
                             upstreamSent / 60);
