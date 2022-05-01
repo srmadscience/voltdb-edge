@@ -248,8 +248,14 @@ public class PretendToBeAPowerCo implements Runnable {
             deviceCheck.getResults()[0].advanceRow();
 
             if (deviceCheck.getResults()[0].getLong("HOW_MANY") != howMany) {
+                
+                if ( deviceCheck.getResults()[0].wasNull()) {
+                    msg("Found no devices");
+                } else {
+                    msg("Found " + deviceCheck.getResults()[0].getLong("HOW_MANY") + " devices");
+                }
 
-                msg("Found " + deviceCheck.getResults()[0].getLong("HOW_MANY") + " devices");
+                
 
                 TransactionSpeedRegulator tsm = new TransactionSpeedRegulator(tpMs,
                         TransactionSpeedRegulator.NO_END_DATE);
