@@ -80,6 +80,14 @@ GROUP BY truncate(MINUTE, message_date)
 CREATE INDEX dma_ix1 ON device_message_activity(message_date);
 
 
+CREATE STREAM segment_0_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_0_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
 CREATE STREAM segment_1_stream
 PARTITION ON COLUMN device_id 
   EXPORT TO TOPIC segment_1_topic
@@ -88,13 +96,89 @@ PARTITION ON COLUMN device_id
 ,device_id bigint not null 
 ,payload varchar(2048));
 
-CREATE STREAM segment_0_stream
+CREATE STREAM segment_2_stream
 PARTITION ON COLUMN device_id 
-  EXPORT TO TOPIC segment_0_topic
+  EXPORT TO TOPIC segment_2_topic
   WITH KEY (message_id) VALUE (message_id,device_id,payload)
 (message_id bigint not null
 ,device_id bigint not null 
 ,payload varchar(2048));
+
+CREATE STREAM segment_3_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_3_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
+
+
+
+CREATE STREAM segment_4_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_4_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
+
+
+
+CREATE STREAM segment_5_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_5_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
+
+
+
+CREATE STREAM segment_6_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_6_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
+
+
+
+CREATE STREAM segment_7_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_7_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
+
+
+
+CREATE STREAM segment_8_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_8_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
+
+
+
+CREATE STREAM segment_9_stream
+PARTITION ON COLUMN device_id 
+  EXPORT TO TOPIC segment_9_topic
+  WITH KEY (message_id) VALUE (message_id,device_id,payload)
+(message_id bigint not null
+,device_id bigint not null 
+,payload varchar(2048));
+
+
 
 CREATE STREAM powerco_1_stream
 PARTITION ON COLUMN device_id 
