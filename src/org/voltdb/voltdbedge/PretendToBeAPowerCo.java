@@ -163,11 +163,19 @@ public class PretendToBeAPowerCo implements Runnable {
                     sentDownstream++;
 
                     // find a device to talk to
-                    Device testDevice = deviceMap.get(deviceIds[r.nextInt(deviceIds.length) + + (10000000 * powerco)]);
+                    long deviceId = deviceIds[r.nextInt(deviceIds.length)];
+                    
+                    Device testDevice = deviceMap.get(deviceId);
+                    
+                    if (testDevice == null) {
+                        
+                        msg("Device " + deviceId + " not found");
+                        
+                    }
 
                     MessageIFace message = null;
 
-                    long deviceId = testDevice.getDeviceId();
+                   // long deviceId = testDevice.getDeviceId();
                     long externallMessageId = System.currentTimeMillis();
                     long latencyMs = -1;
                     String errorMessage = null;
@@ -273,6 +281,7 @@ public class PretendToBeAPowerCo implements Runnable {
 
                 mainClient.drain();
                 msg("Creating " + howMany + " devices ... done");
+                
             } else {
                 msg(howMany + " devices already exist");
             }

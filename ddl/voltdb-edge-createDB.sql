@@ -51,11 +51,10 @@ CREATE TABLE device_messages
 ,segment_id bigint not null 
 ,current_owner_id bigint not null
 ,completion_time_ms bigint
-,ttl_date timestamp 
 ,primary key (device_id,message_id))
-USING TTL 1 HOUR ON COLUMN ttl_date;
+USING TTL 1 HOURS ON COLUMN message_date;
 
-PARTITION TABLE device_messages ON COLUMN ttl_date;
+PARTITION TABLE device_messages ON COLUMN device_id;
 
 CREATE INDEX dm_ix1 ON device_messages(message_date);
 
