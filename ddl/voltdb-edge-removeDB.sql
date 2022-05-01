@@ -1,4 +1,7 @@
 
+DROP TASK MarkMessagesStaleTask IF EXISTS;
+
+DROP PROCEDURE MarkMessagesStale IF EXISTS;
 DROP PROCEDURE ProvisionDevice IF EXISTS;
 DROP PROCEDURE SendMessageDownstream IF EXISTS;
 DROP PROCEDURE SendMessageUpstream IF EXISTS;

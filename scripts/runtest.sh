@@ -15,14 +15,14 @@ kill `ps -deaf | grep java | grep voltdb-edge | awk '{ print $2 }'` 2> /dev/null
 sleep 5
 
 while
-	[ $PCO -le $POWERCOS ]
+	[ $PCO -lt $POWERCOS ]
 do
 	java -jar voltdb-edge-powerco.jar `cat $HOME/.vdbhostnames`  ${TPS} ${DURATION} ${METERS} ${QUERYSECONDS}  $PCO > powerco_${PCO}.lst  &
 	PCO=`expr $PCO + 1`
 done
 
 while
-	[ $LOC -le $LOCATIONS ]
+	[ $LOC -lt $LOCATIONS ]
 do
 	java -jar voltdb-edge-devices.jar `cat $HOME/.vdbhostnames`  ${DURATION} ${LOC} > location_${LOC}.lst  & 
 	LOC=`expr $LOC + 1`

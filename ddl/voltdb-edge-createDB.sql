@@ -56,7 +56,7 @@ USING TTL 1 HOURS ON COLUMN message_date;
 
 PARTITION TABLE device_messages ON COLUMN device_id;
 
-CREATE INDEX dm_ix1 ON device_messages(message_date);
+CREATE INDEX dm_ix1 ON device_messages(message_date,status_code);
 
 
 CREATE VIEW device_message_summary AS
@@ -251,6 +251,22 @@ where message_date = truncate(minute,now)
 and   status_code = 'MIF';
 --
 END;
+
+CREATE PROCEDURE MarkMessagesStale
+DIRECTED
+AS
+UPDATE device_messages dm
+SET    dm.status_code = 'STALE'
+WHERE  dm.status_code = 'MIF'
+AND    dm.message_date BETWEEN DATEADD(MILLISECOND,-61000,NOW) AND DATEADD(MILLISECOND,-60000,NOW) ; 
+
+
+CREATE TASK MarkMessagesStaleTask 
+ON SCHEDULE EVERY 1000 MILLISECONDS
+PROCEDURE  MarkMessagesStale
+ON ERROR LOG RUN ON PARTITIONS ENABLE;   
+
+
 
 END_OF_BATCH
 
