@@ -402,7 +402,8 @@ public class PretendToBeAPowerCo implements Runnable {
 
     private static void getStats(SafeHistogramCache statsCache, Client c, int powerco)
             throws IOException, NoConnectionsException, ProcCallException {
-        String[] statNames = { "upstreamLatency" ,"actual_tps_powerco_"+powerco};
+        String[] statNames = { "upstreamLatency" };
+        String[] statNames2 = { "actual_tps_powerco_"+powerco};
 
         StatsHistogram upstreamLatencyHist = statsCache.get("upstreamLatency");
 
@@ -422,6 +423,19 @@ public class PretendToBeAPowerCo implements Runnable {
             long count = (long) aHistogram.getEventTotal();
 
             reportStats(c, "count", "count", "COUNT_" + statName, "COUNT_" + statName, count);
+        }
+        
+        for (String statName : statNames2) {
+
+            StatsHistogram aHistogram = statsCache.get(statName);
+
+            for (float pctile : pctiles) {
+                reportStats(c, "tps", "tps_" + powerco, "TPS_" + pctile, "tps",
+                        aHistogram.getLatencyPct(pctile));
+            }
+
+
+            
         }
     }
 
