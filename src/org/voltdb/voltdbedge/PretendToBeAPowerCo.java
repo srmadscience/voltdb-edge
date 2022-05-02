@@ -229,6 +229,8 @@ public class PretendToBeAPowerCo implements Runnable {
 
                 
                 shc.report("actual_tps_powerco_"+powerco, actualTps, "Actual TPS obtained", tps * 2);
+                
+                Thread.sleep(endPassMs - System.currentTimeMillis());
 
             } catch (Exception e) {
                 msg(e.getMessage());
