@@ -405,7 +405,7 @@ public class PretendToBeAPowerCo implements Runnable {
         final ProducerRecord<Long, String> record = new ProducerRecord<>(topicname, message.getDeviceId(), payload);
 
         final long startMS = System.currentTimeMillis(); //TOOD
-        kafkaProducer.send(record).get();
+        kafkaProducer.send(record); //.get();
         msg("send=" + (System.currentTimeMillis() - startMS));
 
     }
