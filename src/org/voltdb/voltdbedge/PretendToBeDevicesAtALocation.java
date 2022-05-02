@@ -127,7 +127,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                 
             } else {
                 msg("Loading Device List can see " + howMany);
-                getDevices(mainClient, location, (int) minDeviceId,
+                getDevices(mainClient, location, (int) howMany, (int) minDeviceId,
                         (int) maxDeviceId);
                 msg("going back to listening for requests");
               
@@ -273,7 +273,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                         msg("Refreshing Device List can see " + currentDeviceCount
                                 + " but only know about " + deviceIds.length);
-                        getDevices(mainClient, location, (int) deviceCheck.getResults()[0].getLong("MIN_DEVICE_ID"),
+                        getDevices(mainClient, location, (int) currentDeviceCount, (int) deviceCheck.getResults()[0].getLong("MIN_DEVICE_ID"),
                                 (int) deviceCheck.getResults()[0].getLong("MAX_DEVICE_ID"));
                         msg("going back to listening for requests");
 
@@ -304,9 +304,13 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
     }
 
-    protected void getDevices(Client mainClient, int location, int minDeviceId, int maxDeviceId)
+    protected void getDevices(Client mainClient, int location, int currentDeviceCount, int minDeviceId, int maxDeviceId)
             throws InterruptedException, IOException, NoConnectionsException {
 
+        
+        deviceIds = new long[currentDeviceCount];
+        deviceMap = new HashMap<Long, Device>();
+        
         int deviceIdEntry = 0;
 
         final int batchSize = 100000;
