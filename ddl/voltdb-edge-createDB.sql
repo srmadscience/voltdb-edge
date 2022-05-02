@@ -34,7 +34,7 @@ PARTITION TABLE devices ON COLUMN device_id;
 CREATE INDEX devixes_idx1 ON devices (location_id);
 
 CREATE VIEW device_summary AS
-SELECT location_id, current_owner_id, count(*) how_many
+SELECT location_id, current_owner_id, count(*) how_many, min(device_id) min_device_id, max(device_id) max_device_id
 FROM   devices
 GROUP BY location_id, current_owner_id;
 
@@ -277,6 +277,7 @@ FROM   devices d
 WHERE d.location_id = l.location_id
 AND   l.location_id = ?
 AND   d.model_number = m.model_number
+AND   d.device_id between ? and ? 
 ORDER BY d.device_id;
 
 
@@ -289,17 +290,18 @@ FROM   devices d
 WHERE d.location_id = l.location_id
 AND   d.current_owner_id = ?
 AND   d.model_number = m.model_number
+AND   d.device_id between ? and ? 
 ORDER BY d.device_id;
 
 CREATE PROCEDURE GetDevicesForPowercoTotal
 AS
-SELECT sum(how_many) how_many
+SELECT sum(how_many) how_many, min(min_device_id) min_device_id, max(max_device_id) max_device_id
 FROM   device_summary d
 WHERE  d.current_owner_id = ?;
 
 CREATE PROCEDURE GetDevicesForLocationTotal
 AS
-SELECT sum(how_many) how_many
+SELECT sum(how_many) how_many, min(min_device_id) min_device_id, max(max_device_id) max_device_id
 FROM   device_summary d
 WHERE  d.location_id = ?;
 

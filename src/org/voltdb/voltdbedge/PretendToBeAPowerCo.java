@@ -125,7 +125,7 @@ public class PretendToBeAPowerCo implements Runnable {
 
         int receivedUpstream = 0;
         int sentDownstream = 0;
- 
+
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
 
             long endPassMs = System.currentTimeMillis() + 1000;
@@ -151,9 +151,9 @@ public class PretendToBeAPowerCo implements Runnable {
                         MessageIFace record = jsonenc.decode(recordAsCSV[3]);
                         // msg("Got incoming message " + record.toString());
 
-                        shc.reportLatency("upstreamLatency", record.getCreateDate().getTime(), "Latency to send data upstream", 30000);
+                        shc.reportLatency("upstreamLatency", record.getCreateDate().getTime(),
+                                "Latency to send data upstream", 30000);
 
-  
                     }
 
                 }
@@ -164,18 +164,18 @@ public class PretendToBeAPowerCo implements Runnable {
 
                     // find a device to talk to
                     long deviceId = deviceIds[r.nextInt(deviceIds.length)];
-                    
+
                     Device testDevice = deviceMap.get(deviceId);
-                    
+
                     if (testDevice == null) {
-                        
+
                         msg("Device " + deviceId + " not found");
-                        
+
                     }
 
                     MessageIFace message = null;
 
-                   // long deviceId = testDevice.getDeviceId();
+                    // long deviceId = testDevice.getDeviceId();
                     long externallMessageId = System.currentTimeMillis();
                     long latencyMs = -1;
                     String errorMessage = null;
@@ -222,14 +222,13 @@ public class PretendToBeAPowerCo implements Runnable {
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats",
                             "downstreamSent" + powerco, sentDownstream / 60);
 
-                    
-                    getStats(shc,mainClient);
-  
+                    getStats(shc, mainClient);
+
                     receivedUpstream = 0;
                     sentDownstream = 0;
-                   
+
                     lastStatsTime = System.currentTimeMillis();
-                    
+
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -247,15 +246,13 @@ public class PretendToBeAPowerCo implements Runnable {
             ClientResponse deviceCheck = mainClient.callProcedure("GetDevicesForPowercoTotal", powerco);
             deviceCheck.getResults()[0].advanceRow();
 
-            if (deviceCheck.getResults()[0].getLong("HOW_MANY") != howMany) {
-                
-                if ( deviceCheck.getResults()[0].wasNull()) {
+            if (deviceCheck.getResults()[0].getLong("HOW_MANY") != howMany || deviceCheck.getResults()[0].wasNull()) {
+
+                if (deviceCheck.getResults()[0].wasNull()) {
                     msg("Found no devices");
                 } else {
                     msg("Found " + deviceCheck.getResults()[0].getLong("HOW_MANY") + " devices");
                 }
-
-                
 
                 TransactionSpeedRegulator tsm = new TransactionSpeedRegulator(tpMs,
                         TransactionSpeedRegulator.NO_END_DATE);
@@ -287,32 +284,38 @@ public class PretendToBeAPowerCo implements Runnable {
 
                 mainClient.drain();
                 msg("Creating " + howMany + " devices ... done");
-                
+
             } else {
                 msg(howMany + " devices already exist");
             }
 
             deviceIds = new long[howMany];
             int deviceIdEntry = 0;
+            final int batchSize = 100000;
 
-            try {
-                ClientResponse cr = mainClient.callProcedure("GetDevicesForPowerco", powerco);
+            for (int d = (int) (10000000 * powerco); d < (10000000 * powerco) + howMany; d += batchSize) {
 
-                while (cr.getResults()[0].advanceRow()) {
+                try {
+                    ClientResponse cr = mainClient.callProcedure("GetDevicesForPowerco", powerco, d, d + batchSize - 1);
 
-                    Device newDevice = new Device(cr.getResults()[0].getLong("DEVICE_ID"),
-                            encoders.get(cr.getResults()[0].getString("encoder_class_name")),
-                            cr.getResults()[0].getString("MODEL_NUMBER"));
+                    while (cr.getResults()[0].advanceRow()) {
 
-                    deviceMap.put(newDevice.getDeviceId(), newDevice);
-                    deviceIds[deviceIdEntry++] = newDevice.getDeviceId();
+                        Device newDevice = new Device(cr.getResults()[0].getLong("DEVICE_ID"),
+                                encoders.get(cr.getResults()[0].getString("encoder_class_name")),
+                                cr.getResults()[0].getString("MODEL_NUMBER"));
 
+                        deviceMap.put(newDevice.getDeviceId(), newDevice);
+                        deviceIds[deviceIdEntry++] = newDevice.getDeviceId();
+
+                    }
+
+                } catch (IOException | ProcCallException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
-
-            } catch (IOException | ProcCallException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             }
+
+            msg(howMany + " devices loaded");
 
         } catch (Exception e) {
             fail(e.getMessage());
@@ -388,16 +391,15 @@ public class PretendToBeAPowerCo implements Runnable {
         kafkaProducer.send(record).get();
 
     }
-    
-    
+
     private static void getStats(SafeHistogramCache statsCache, Client c)
             throws IOException, NoConnectionsException, ProcCallException {
         String[] statNames = { "upstreamLatency" };
 
         StatsHistogram upstreamLatencyHist = statsCache.get("upstreamLatency");
-  
-         reportStats(c, "avg", "avg", "AVG_LATENCY", "upstreamLatency", (long) upstreamLatencyHist.getLatencyAverage());
-   
+
+        reportStats(c, "avg", "avg", "AVG_LATENCY", "upstreamLatency", (long) upstreamLatencyHist.getLatencyAverage());
+
         float[] pctiles = { 50, 90, 95, 99, 99.5f, 99.95f, 100 };
 
         for (String statName : statNames) {
@@ -405,7 +407,8 @@ public class PretendToBeAPowerCo implements Runnable {
             StatsHistogram aHistogram = statsCache.get(statName);
 
             for (float pctile : pctiles) {
-                reportStats(c, "lcy", "lcy", "UPSTREAM_LATENCY_" + pctile, "upstreamLatency", aHistogram.getLatencyPct(pctile));
+                reportStats(c, "lcy", "lcy", "UPSTREAM_LATENCY_" + pctile, "upstreamLatency",
+                        aHistogram.getLatencyPct(pctile));
             }
 
             long count = (long) aHistogram.getEventTotal();

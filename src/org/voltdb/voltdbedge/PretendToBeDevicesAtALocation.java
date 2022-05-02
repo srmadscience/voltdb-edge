@@ -82,7 +82,8 @@ public class PretendToBeDevicesAtALocation implements Runnable {
     int duration;
     long startMs = System.currentTimeMillis();
     HashMap<Long, Device> deviceMap = new HashMap<Long, Device>();
-    long[] deviceIds = null;
+    long[] deviceIds = new long[0];
+    
     HashMap<String, ModelEncoderIFace> encoders = new HashMap<String, ModelEncoderIFace>();
     Consumer<Long, String> kafkaDeviceConsumer;
     Producer<Long, String> kafkaProducer;
@@ -107,7 +108,32 @@ public class PretendToBeDevicesAtALocation implements Runnable {
         connectToKafkaConsumerAndProducer();
 
         try {
-            getDevices(mainClient, location);
+
+            ClientResponse deviceCheck = mainClient.callProcedure("GetDevicesForLocationTotal", location);
+            deviceCheck.getResults()[0].advanceRow();
+            
+            long howMany = deviceCheck.getResults()[0].getLong("HOW_MANY");
+            long minDeviceId = deviceCheck.getResults()[0].getLong("MIN_DEVICE_ID");
+                    long maxDeviceId = deviceCheck.getResults()[0].getLong("MAX_DEVICE_ID");
+            
+            if (deviceCheck.getResults()[0].wasNull()) {
+                
+                howMany = 0;
+                minDeviceId = 0;
+                maxDeviceId = 0;
+                
+                msg("No devices for this location seen.");
+                msg("will check again in " + ONE_MINUTE_MS + " milliseconds");
+                
+            } else {
+                msg("Loading Device List can see " + howMany);
+                getDevices(mainClient, location, (int) minDeviceId,
+                        (int) maxDeviceId);
+                msg("going back to listening for requests");
+              
+            }
+
+
         } catch (Exception e) {
             msg(e.getMessage());
         }
@@ -140,8 +166,6 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                         long deviceId = Integer.parseInt(recordAsCSV[1]);
                         Device ourDevice = deviceMap.get(deviceId);
 
-                        // msg("Device=" + aRecord.value());
-
                         if (ourDevice != null) {
 
                             downstreamRecd++;
@@ -152,7 +176,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                             MessageIFace downstreamRecord = ourDevice.getEncoder().decode(recordAsCSV[2]);
 
-                            //msg("Got incoming message " + downstreamRecord.toString());
+                            // msg("Got incoming message " + downstreamRecord.toString());
 
                             long eventAge = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
 
@@ -160,7 +184,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 lagMs = eventAge;
                             }
 
-                            //msg(downstreamRecord.getMessageType());
+                            // msg(downstreamRecord.getMessageType());
 
                             if (downstreamRecord instanceof GetStatusMessage) {
                                 GetStatusMessage ourMessage = (GetStatusMessage) downstreamRecord;
@@ -168,7 +192,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                         ourDevice.getMeterReading());
                                 ourMessage.setJsonPayload(g.toJson(mr));
                                 ourMessage.setErrorMessage("OK");
-                                //msg(ourMessage.toString());
+                                // msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
                             } else if (downstreamRecord instanceof DisableFeatureMessage) {
@@ -182,7 +206,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
 
-                               // msg(ourMessage.toString());
+                                // msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
                             } else if (downstreamRecord instanceof EnableFeatureMessage) {
@@ -196,7 +220,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
                                 ourMessage.setErrorMessage("OK");
-                                //msg(ourMessage.toString());
+                                // msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -204,14 +228,14 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 StartMessage ourMessage = (StartMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STARTED");
-                                //msg(ourMessage.toString());
+                                // msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
 
                             } else if (downstreamRecord instanceof StopMessage) {
 
                                 StopMessage ourMessage = (StopMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STOPPED");
-                                //msg(ourMessage.toString());
+                                // msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -219,7 +243,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 UpgradeFirmwareMessage ourMessage = (UpgradeFirmwareMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("Upgraded " + ourMessage.getPayload().length + " bytes");
-                                //msg(ourMessage.toString());
+                                // msg(ourMessage.toString());
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -240,17 +264,23 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     // See if number of devices has changed
                     ClientResponse deviceCheck = mainClient.callProcedure("GetDevicesForLocationTotal", location);
                     deviceCheck.getResults()[0].advanceRow();
-
-                    if (deviceCheck.getResults()[0].getLong("HOW_MANY") != deviceIds.length) {
-                        
-                        msg("Refreshing Device List can see " + deviceCheck.getResults()[0].getLong("HOW_MANY") + " but only know about " + deviceIds.length);
-                        getDevices(mainClient, location);
-                        msg("going back to listening for requests");
-                        
+                    long currentDeviceCount = deviceCheck.getResults()[0].getLong("HOW_MANY");
+                    if (deviceCheck.getResults()[0].wasNull()) {
+                        currentDeviceCount = 0;
                     }
-                    
+
+                    if (currentDeviceCount != deviceIds.length) {
+
+                        msg("Refreshing Device List can see " + currentDeviceCount
+                                + " but only know about " + deviceIds.length);
+                        getDevices(mainClient, location, (int) deviceCheck.getResults()[0].getLong("MIN_DEVICE_ID"),
+                                (int) deviceCheck.getResults()[0].getLong("MAX_DEVICE_ID"));
+                        msg("going back to listening for requests");
+
+                    }
+
                     // log stats
-                    
+
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "upstreamSent" + location,
                             upstreamSent / 60);
 
@@ -274,30 +304,33 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
     }
 
-    protected void getDevices(Client mainClient, int location)
+    protected void getDevices(Client mainClient, int location, int minDeviceId, int maxDeviceId)
             throws InterruptedException, IOException, NoConnectionsException {
 
         int deviceIdEntry = 0;
 
-        try {
-            ClientResponse cr = mainClient.callProcedure("GetDevicesForLocation", location);
-            deviceIds = new long[cr.getResults()[0].getRowCount()];
+        final int batchSize = 100000;
 
-            while (cr.getResults()[0].advanceRow()) {
+        for (int d = minDeviceId; d < maxDeviceId; d += batchSize) {
 
-                Device newDevice = new Device(cr.getResults()[0].getLong("DEVICE_ID"),
-                        encoders.get(cr.getResults()[0].getString("encoder_class_name")),
-                        cr.getResults()[0].getString("MODEL_NUMBER"));
+            try {
+                ClientResponse cr = mainClient.callProcedure("GetDevicesForLocation", location, d, d + batchSize - 1);
 
-                newDevice.setMeterReading(r.nextInt(1000000));
-                deviceMap.put(newDevice.getDeviceId(), newDevice);
-                deviceIds[deviceIdEntry++] = newDevice.getDeviceId();
+                while (cr.getResults()[0].advanceRow()) {
 
+                    Device newDevice = new Device(cr.getResults()[0].getLong("DEVICE_ID"),
+                            encoders.get(cr.getResults()[0].getString("encoder_class_name")),
+                            cr.getResults()[0].getString("MODEL_NUMBER"));
+
+                    deviceMap.put(newDevice.getDeviceId(), newDevice);
+                    deviceIds[deviceIdEntry++] = newDevice.getDeviceId();
+
+                }
+
+            } catch (IOException | ProcCallException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
-
-        } catch (IOException | ProcCallException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
 
         msg("Got " + deviceIds.length + " devices");
