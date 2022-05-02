@@ -171,47 +171,48 @@ public class PretendToBeAPowerCo implements Runnable {
 
                         msg("Device " + deviceId + " not found");
 
-                    }
-
-                    MessageIFace message = null;
-
-                    // long deviceId = testDevice.getDeviceId();
-                    long externallMessageId = System.currentTimeMillis();
-                    long latencyMs = -1;
-                    String errorMessage = null;
-                    Date createDate = new Date();
-                    int destinationSegmentId = -1;
-                    long callingOwner = powerco;
-
-                    if (r.nextInt(2) == 0) {
-
-                        message = new GetStatusMessage(deviceId, externallMessageId, latencyMs, errorMessage,
-                                createDate, destinationSegmentId, callingOwner, null);
-
                     } else {
 
-                        byte[] payload = "Hello World".getBytes();
+                        MessageIFace message = null;
 
-                        message = new UpgradeFirmwareMessage(deviceId, externallMessageId, latencyMs, errorMessage,
-                                createDate, destinationSegmentId, payload, callingOwner);
+                        // long deviceId = testDevice.getDeviceId();
+                        long externallMessageId = System.currentTimeMillis();
+                        long latencyMs = -1;
+                        String errorMessage = null;
+                        Date createDate = new Date();
+                        int destinationSegmentId = -1;
+                        long callingOwner = powerco;
+
+                        if (r.nextInt(2) == 0) {
+
+                            message = new GetStatusMessage(deviceId, externallMessageId, latencyMs, errorMessage,
+                                    createDate, destinationSegmentId, callingOwner, null);
+
+                        } else {
+
+                            byte[] payload = "Hello World".getBytes();
+
+                            message = new UpgradeFirmwareMessage(deviceId, externallMessageId, latencyMs, errorMessage,
+                                    createDate, destinationSegmentId, payload, callingOwner);
+                        }
+
+                        testDevice.addMessage(message);
+                        sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, powerco, message);
+
+                        if (++txTotal % 100000 == 0) {
+                            msg(txTotal + " events processed");
+                        }
+
                     }
-
-                    testDevice.addMessage(message);
-                    sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, powerco, message);
 
                     if (System.currentTimeMillis() > endPassMs) {
                         break;
                     }
 
-                    if (++txTotal % 100000 == 0) {
-                        msg(txTotal + " events processed");
-                    }
-
                 }
 
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                msg(e.getMessage());
             }
 
             if (lastStatsTime + ONE_MINUTE_MS < System.currentTimeMillis()) {
