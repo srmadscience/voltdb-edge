@@ -415,7 +415,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     + Base64.getEncoder().encodeToString(encodedMessage.getBytes());
             final ProducerRecord<Long, String> record = new ProducerRecord<>(topicname, message.getDeviceId(), payload);
 
-            kafkaProducer.send(record).get();
+            kafkaProducer.send(record);
 
         } catch (Exception e) {
             fail("sendMessageUpstream:" + e.getMessage());
