@@ -404,15 +404,16 @@ public class PretendToBeAPowerCo implements Runnable {
                 + Base64.getEncoder().encodeToString(encodedMessage.getBytes());
         final ProducerRecord<Long, String> record = new ProducerRecord<>(topicname, message.getDeviceId(), payload);
 
-        kafkaProducer.send(record).get();
+        kafkaProducer.send(record);; //.get();
 
     }
 
     private static void getStats(SafeHistogramCache statsCache, Client c, int powerco)
             throws IOException, NoConnectionsException, ProcCallException {
+        
         String[] statNames = { "upstreamLatency" };
         String[] statNames2 = { "actual_tps_powerco_"+powerco};
-
+        
         StatsHistogram upstreamLatencyHist = statsCache.get("upstreamLatency");
 
         reportStats(c, "avg", "avg", "AVG_LATENCY", "upstreamLatency", (long) upstreamLatencyHist.getLatencyAverage());
@@ -443,7 +444,7 @@ public class PretendToBeAPowerCo implements Runnable {
                 
             }
             
-            reportStats(c, "tps", statName, "TPS_AVG", "tps",
+            reportStats(c, "tps", statName, "TPS_AVG", statName,
                     (long) aHistogram.getLatencyAverage());
 
 
