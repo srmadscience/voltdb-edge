@@ -51,8 +51,7 @@ CREATE TABLE device_messages
 ,segment_id bigint not null 
 ,current_owner_id bigint not null
 ,completion_time_ms bigint
-,primary key (device_id,message_id))
-USING TTL 1 HOURS ON COLUMN message_date;
+,primary key (device_id,message_id));
 
 PARTITION TABLE device_messages ON COLUMN device_id;
 
