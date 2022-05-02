@@ -515,8 +515,8 @@ public class PretendToBeAPowerCo implements Runnable {
         props.put("bootstrap.servers", kafkaBrokers.toString());
         props.put("acks", "all");
         props.put("retries", 0);
-        props.put("batch.size", 163840);
-        props.put("linger.ms", 10);
+        props.put("batch.size", 16384);
+        props.put("linger.ms", 1);
         props.put("buffer.memory", 33554432);
         props.put("key.serializer", keySerializer);
         props.put("value.serializer", valueSerializer);
