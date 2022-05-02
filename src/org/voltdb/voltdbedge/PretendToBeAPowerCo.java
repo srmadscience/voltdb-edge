@@ -438,7 +438,7 @@ public class PretendToBeAPowerCo implements Runnable {
             StatsHistogram aHistogram = statsCache.get(statName);
 
             for (float pctile : pctiles) {
-                reportStats(c, "tps", statName, "TPS_" + pctile, "tps",
+                reportStats(c, "tps", statName, "TPS_" + pctile, statName,
                         aHistogram.getLatencyPct(pctile));
                 
             }
