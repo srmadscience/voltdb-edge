@@ -130,6 +130,7 @@ public class PretendToBeAPowerCo implements Runnable {
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
 
+            long startPassMs = System.currentTimeMillis();
             long endPassMs = System.currentTimeMillis() + 1000;
 
             try {
@@ -137,6 +138,8 @@ public class PretendToBeAPowerCo implements Runnable {
                 // See if anyone has contacted us
                 ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer
                         .poll(Duration.ofMillis(POLL_DELAY));
+                msg("end poll=" + (System.currentTimeMillis() - startPassMs));
+
                 kafkaPowercoConsumer.commitAsync();
 
                 receivedUpstream += consumerRecords.count();
@@ -160,7 +163,7 @@ public class PretendToBeAPowerCo implements Runnable {
 
                 }
                 
-                msg("t=" + (System.currentTimeMillis() - endPassMs + 1000));
+                msg("end process=" + (System.currentTimeMillis() - startPassMs));
 
                 int actualTps = 0;
                 
@@ -217,6 +220,9 @@ public class PretendToBeAPowerCo implements Runnable {
                     }
 
                 }
+                
+                msg("end tps=" + (System.currentTimeMillis() - startPassMs));
+
                 
                 shc.report("actual_tps_powerco_"+powerco, actualTps, "Actual TPS obtained", tps);
 
