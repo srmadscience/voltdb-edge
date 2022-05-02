@@ -159,6 +159,8 @@ public class PretendToBeAPowerCo implements Runnable {
                     }
 
                 }
+                
+                msg("t=" + (System.currentTimeMillis() - endPassMs + 1000));
 
                 int actualTps = 0;
                 
