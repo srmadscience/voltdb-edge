@@ -69,9 +69,11 @@ import edgeprocs.ReferenceData;
 
 public class PretendToBeAPowerCo implements Runnable {
 
+    public static final int LATENCY_HISTOGRAM_SIZE = 60000;
+
     private static final int LOCATION_COUNT = 2;
 
-    private static final long POLL_DELAY = 100;
+    private static final long POLL_DELAY = 0;
 
     private static final long ONE_MINUTE_MS = 60000;
 
@@ -152,15 +154,18 @@ public class PretendToBeAPowerCo implements Runnable {
                         // msg("Got incoming message " + record.toString());
 
                         shc.reportLatency("upstreamLatency", record.getCreateDate().getTime(),
-                                "Latency to send data upstream", 30000);
+                                "Latency to send data upstream", LATENCY_HISTOGRAM_SIZE);
 
                     }
 
                 }
 
+                int actualTps = 0;
+                
                 for (int i = 0; i < tps; i++) {
 
                     sentDownstream++;
+                    actualTps = i;
 
                     // find a device to talk to
                     long deviceId = deviceIds[r.nextInt(deviceIds.length)];
@@ -210,6 +215,8 @@ public class PretendToBeAPowerCo implements Runnable {
                     }
 
                 }
+                
+                shc.report("actual_tps_powerco_"+powerco, actualTps, "Actual TPS obtained", tps);
 
             } catch (Exception e) {
                 msg(e.getMessage());
@@ -223,7 +230,7 @@ public class PretendToBeAPowerCo implements Runnable {
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats",
                             "downstreamSent" + powerco, sentDownstream / 60);
 
-                    getStats(shc, mainClient);
+                    getStats(shc, mainClient,powerco);
 
                     receivedUpstream = 0;
                     sentDownstream = 0;
@@ -393,9 +400,9 @@ public class PretendToBeAPowerCo implements Runnable {
 
     }
 
-    private static void getStats(SafeHistogramCache statsCache, Client c)
+    private static void getStats(SafeHistogramCache statsCache, Client c, int powerco)
             throws IOException, NoConnectionsException, ProcCallException {
-        String[] statNames = { "upstreamLatency" };
+        String[] statNames = { "upstreamLatency" ,"actual_tps_powerco_"+powerco};
 
         StatsHistogram upstreamLatencyHist = statsCache.get("upstreamLatency");
 

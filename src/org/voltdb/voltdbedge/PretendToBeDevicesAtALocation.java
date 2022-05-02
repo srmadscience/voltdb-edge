@@ -176,14 +176,14 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                             MessageIFace downstreamRecord = ourDevice.getEncoder().decode(recordAsCSV[2]);
 
-                            // msg("Got incoming message " + downstreamRecord.toString());
-
+ 
                             long eventAge = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
 
                             if (eventAge > lagMs) {
                                 lagMs = eventAge;
                             }
-
+                            
+   
                             // msg(downstreamRecord.getMessageType());
 
                             if (downstreamRecord instanceof GetStatusMessage) {
