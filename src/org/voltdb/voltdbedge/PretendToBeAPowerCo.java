@@ -69,6 +69,10 @@ import edgeprocs.ReferenceData;
 
 public class PretendToBeAPowerCo implements Runnable {
 
+    public static final int KB_16 = 16384;
+
+    public static final int MB_32 = 33554432;
+
     public static final int LATENCY_HISTOGRAM_SIZE = 60000;
 
     private static final int LOCATION_COUNT = 2;
@@ -521,9 +525,9 @@ public class PretendToBeAPowerCo implements Runnable {
         props.put("bootstrap.servers", kafkaBrokers.toString());
         props.put("acks", "all");
         props.put("retries", 0);
-        props.put("batch.size", 16384);
+        props.put("batch.size", KB_16);
         props.put("linger.ms", 1);
-        props.put("buffer.memory", 33554432);
+        props.put("buffer.memory", MB_32);
         props.put("key.serializer", keySerializer);
         props.put("value.serializer", valueSerializer);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
