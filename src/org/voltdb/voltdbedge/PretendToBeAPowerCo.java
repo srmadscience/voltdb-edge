@@ -224,7 +224,7 @@ public class PretendToBeAPowerCo implements Runnable {
               //  msg("end tps=" + (System.currentTimeMillis() - startPassMs));
 
                 
-                shc.report("actual_tps_powerco_"+powerco, actualTps, "Actual TPS obtained", tps);
+                shc.report("actual_tps_powerco_"+powerco, actualTps, "Actual TPS obtained", tps * 2);
 
             } catch (Exception e) {
                 msg(e.getMessage());
@@ -438,9 +438,14 @@ public class PretendToBeAPowerCo implements Runnable {
             StatsHistogram aHistogram = statsCache.get(statName);
 
             for (float pctile : pctiles) {
-                reportStats(c, "tps", "tps_" + powerco, "TPS_" + pctile, "tps",
+                reportStats(c, "tps", statName, "TPS_" + pctile, "tps",
                         aHistogram.getLatencyPct(pctile));
+                
             }
+            
+            reportStats(c, "tps", statName, "TPS_AVG", "tps",
+                    (long) aHistogram.getLatencyAverage());
+
 
 
             
