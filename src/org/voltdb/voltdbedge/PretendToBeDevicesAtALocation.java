@@ -320,7 +320,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
             try {
                 ClientResponse cr = mainClient.callProcedure("GetDevicesForLocation", location, d, d + batchSize - 1);
 
-                while (cr.getResults()[0].advanceRow()) {
+                while (cr.getResults()[0].advanceRow() && deviceIdEntry < deviceIds.length) {
 
                     Device newDevice = new Device(cr.getResults()[0].getLong("DEVICE_ID"),
                             encoders.get(cr.getResults()[0].getString("encoder_class_name")),
