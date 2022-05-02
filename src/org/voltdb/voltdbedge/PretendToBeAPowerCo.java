@@ -230,9 +230,10 @@ public class PretendToBeAPowerCo implements Runnable {
                 
                 shc.report("actual_tps_powerco_"+powerco, actualTps, "Actual TPS obtained", tps * 2);
                 
-                msg("Sleep "+ (endPassMs - System.currentTimeMillis()));
-                Thread.sleep(endPassMs - System.currentTimeMillis());
-
+                //msg("Sleep "+ (endPassMs - System.currentTimeMillis()));
+                shc.report("actual_cycletime_powerco_"+powerco, (int)(endPassMs - System.currentTimeMillis()), "Actual Cycle Time", 1000);
+               Thread.sleep(endPassMs - System.currentTimeMillis());
+ 
             } catch (Exception e) {
                 msg(e.getMessage());
             }
@@ -419,7 +420,7 @@ public class PretendToBeAPowerCo implements Runnable {
             throws IOException, NoConnectionsException, ProcCallException {
         
         String[] statNames = { "upstreamLatency" };
-        String[] statNames2 = { "actual_tps_powerco_"+powerco};
+        String[] statNames2 = { "actual_tps_powerco_"+powerco,"actual_cycletime_powerco_"+powerco};
         
         StatsHistogram upstreamLatencyHist = statsCache.get("upstreamLatency");
 
