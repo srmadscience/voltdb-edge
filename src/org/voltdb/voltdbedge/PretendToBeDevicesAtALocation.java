@@ -143,6 +143,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
         long lastStatsTime = System.currentTimeMillis();
         int downstreamRecd = 0;
         int upstreamSent = 0;
+        int somebodyElsesDevice = 0;
         long lagMs = 0;
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
@@ -248,6 +249,9 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                             }
 
+                        } else {
+                           
+                            somebodyElsesDevice++;
                         }
                     }
 
@@ -287,10 +291,14 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats",
                             "downstreamRecd" + location, downstreamRecd / 60);
 
+                    reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats",
+                            "somebodyElsesDevice" + location, somebodyElsesDevice / 60);
+
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "devicestats", "lagms" + location, lagMs);
 
                     downstreamRecd = 0;
                     upstreamSent = 0;
+                    somebodyElsesDevice = 0;
 
                     lagMs = 0;
                     lastStatsTime = System.currentTimeMillis();

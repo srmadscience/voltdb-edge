@@ -1,4 +1,9 @@
 <topics enabled="true">
+<broker>
+    <property name="cluster.id">3</property>
+    <property name="network.thread.count">10</property>
+  </broker>
+
 <topic name="downstream_0_topic" procedure="SendMessageDownstream">
 </topic><topic name="upstream_0_topic" procedure="SendMessageUpstream">
 <property name="producer.parameters.includeKey">true</property>
