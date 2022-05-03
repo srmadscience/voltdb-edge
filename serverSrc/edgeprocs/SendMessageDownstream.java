@@ -73,30 +73,30 @@ public class SendMessageDownstream extends VoltProcedure {
 
     public static final SQLStmt insertIntoStream1 = new SQLStmt(
             "INSERT INTO segment_1_stream(message_id, device_id, payload) VALUES (?,?,?);");
-    
+
     public static final SQLStmt insertIntoStream2 = new SQLStmt(
             "INSERT INTO segment_2_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
- 
+
     public static final SQLStmt insertIntoStream3 = new SQLStmt(
             "INSERT INTO segment_3_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
- 
+
     public static final SQLStmt insertIntoStream4 = new SQLStmt(
             "INSERT INTO segment_4_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
- 
+
     public static final SQLStmt insertIntoStream5= new SQLStmt(
             "INSERT INTO segment_5_stream(message_id, device_id, payload) VALUES (?,?,?);");
- 
+
     public static final SQLStmt insertIntoStream6 = new SQLStmt(
             "INSERT INTO segment_6_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
- 
+
     public static final SQLStmt insertIntoStream7 = new SQLStmt(
             "INSERT INTO segment_7_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
- 
+
     public static final SQLStmt insertIntoStream8 = new SQLStmt(
             "INSERT INTO segment_8_stream(message_id, device_id, payload) VALUES (?,?,?);");
 
@@ -107,7 +107,7 @@ public class SendMessageDownstream extends VoltProcedure {
             , insertIntoStream2,insertIntoStream3, insertIntoStream4, insertIntoStream5
             , insertIntoStream6, insertIntoStream7, insertIntoStream8, insertIntoStream9};
 
-    
+
     // @formatter:on
 
     Gson g = new Gson();

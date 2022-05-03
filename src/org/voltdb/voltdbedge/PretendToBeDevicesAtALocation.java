@@ -81,10 +81,10 @@ public class PretendToBeDevicesAtALocation implements Runnable {
     int location;
     int duration;
     long startMs = System.currentTimeMillis();
-    HashMap<Long, Device> deviceMap = new HashMap<Long, Device>();
+    HashMap<Long, Device> deviceMap = new HashMap<>();
     long[] deviceIds = new long[0];
 
-    HashMap<String, ModelEncoderIFace> encoders = new HashMap<String, ModelEncoderIFace>();
+    HashMap<String, ModelEncoderIFace> encoders = new HashMap<>();
     Consumer<Long, String> kafkaDeviceConsumer;
     Producer<Long, String> kafkaProducer;
     final long powerCoEmulatorId = System.currentTimeMillis();
@@ -147,8 +147,8 @@ public class PretendToBeDevicesAtALocation implements Runnable {
         long lagMs = 0;
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
-            
-            //long endPassMs = System.currentTimeMillis() + 1000;
+
+            // long endPassMs = System.currentTimeMillis() + 1000;
 
             try {
 
@@ -250,7 +250,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                             }
 
                         } else {
-                           
+
                             somebodyElsesDevice++;
                         }
                     }
@@ -323,7 +323,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
             throws InterruptedException, IOException, NoConnectionsException {
 
         deviceIds = new long[currentDeviceCount];
-        deviceMap = new HashMap<Long, Device>();
+        deviceMap = new HashMap<>();
 
         int deviceIdEntry = 0;
 
@@ -378,7 +378,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + powerCoEmulatorId);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,5000);
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 5000);
 
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
 
@@ -395,7 +395,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
-            kafkaDeviceConsumer.subscribe(Collections.singletonList("segment_"+location+"_topic"));
+            kafkaDeviceConsumer.subscribe(Collections.singletonList("segment_" + location + "_topic"));
 
         } catch (Exception e) {
             msg(e.getMessage());

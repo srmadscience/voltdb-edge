@@ -4,7 +4,7 @@ INSERT INTO models (model_number, encoder_class_name) VALUES ('MeterTron100','or
 
 INSERT INTO models (model_number, encoder_class_name) VALUES ('HomeMeter100','org.voltse.edge.edgeencoders.TabEncoderImpl');
 
-INSERT INTO utilities (util_id, util_name) VALUES (0,'Windpower, inc');
+INSERT INTO utilities (util_id, util_name) VALUES (0,'Windpower, Inc');
 
 INSERT INTO utilities (util_id, util_name) VALUES (1,'Giant Hamster Wheel Power');
 

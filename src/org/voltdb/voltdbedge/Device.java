@@ -14,9 +14,9 @@ public class Device {
 
     String modelNumber;
 
-    ArrayList<MessageIFace> messages = new ArrayList<MessageIFace>();
+    ArrayList<MessageIFace> messages = new ArrayList<>();
 
-    HashMap<String, Boolean> features = new HashMap<String, Boolean>();
+    HashMap<String, Boolean> features = new HashMap<>();
 
     long meterReading = 0;
 

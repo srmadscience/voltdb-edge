@@ -91,9 +91,9 @@ public class PretendToBeAPowerCo implements Runnable {
     int queryseconds;
     int powerco;
     long startMs = System.currentTimeMillis();
-    HashMap<Long, Device> deviceMap = new HashMap<Long, Device>();
+    HashMap<Long, Device> deviceMap = new HashMap<>();
     long[] deviceIds = null;
-    HashMap<String, ModelEncoderIFace> encoders = new HashMap<String, ModelEncoderIFace>();
+    HashMap<String, ModelEncoderIFace> encoders = new HashMap<>();
     Consumer<Long, String> kafkaPowercoConsumer;
     Producer<Long, String> kafkaProducer;
     final long powerCoEmulatorId = System.currentTimeMillis();
@@ -321,7 +321,7 @@ public class PretendToBeAPowerCo implements Runnable {
             int deviceIdEntry = 0;
             final int batchSize = 100000;
 
-            for (int d = (int) (10000000 * powerco); d < (10000000 * powerco) + howMany; d += batchSize) {
+            for (int d = 10000000 * powerco; d < (10000000 * powerco) + howMany; d += batchSize) {
 
                 try {
                     ClientResponse cr = mainClient.callProcedure("GetDevicesForPowerco", powerco, d, d + batchSize - 1);
