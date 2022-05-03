@@ -343,7 +343,7 @@ AS
 UPDATE device_messages dm
 SET    dm.status_code = 'STALE'
 WHERE  dm.status_code = 'MIF'
-AND    dm.message_date BETWEEN DATEADD(MILLISECOND,-1810000,NOW) AND DATEADD(MILLISECOND,-1800000,NOW) ; 
+AND    dm.message_date BETWEEN DATEADD(MILLISECOND,-3610000,NOW) AND DATEADD(MILLISECOND,-3600000,NOW) ; 
 
 
 CREATE TASK MarkMessagesStaleTask 

@@ -81,6 +81,8 @@ public class PretendToBeAPowerCo implements Runnable {
 
     private static final long ONE_MINUTE_MS = 60000;
 
+    private static final int SHUTDOWN_BUFFER_MS = 20000;
+
     Client mainClient;
     String hostnames;
     int tps;
@@ -141,7 +143,7 @@ public class PretendToBeAPowerCo implements Runnable {
                 // See if anyone has contacted us
                 ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer
                         .poll(Duration.ofMillis(POLL_DELAY));
-                //msg("end poll=" + (System.currentTimeMillis() - startPassMs));
+                // msg("end poll=" + (System.currentTimeMillis() - startPassMs));
 
                 kafkaPowercoConsumer.commitAsync();
 
@@ -165,74 +167,77 @@ public class PretendToBeAPowerCo implements Runnable {
                     }
 
                 }
-                
-               // msg("end process=" + (System.currentTimeMillis() - startPassMs));
 
-                int actualTps = 0;
-                
-                for (int i = 0; i < tps; i++) {
+                // msg("end process=" + (System.currentTimeMillis() - startPassMs));
 
-                    sentDownstream++;
-                    actualTps = i;
+                if (System.currentTimeMillis() < (duration * 1000) + startMs + SHUTDOWN_BUFFER_MS) {
 
-                    // find a device to talk to
-                    long deviceId = deviceIds[r.nextInt(deviceIds.length)];
+                    int actualTps = 0;
 
-                    Device testDevice = deviceMap.get(deviceId);
+                    for (int i = 0; i < tps; i++) {
 
-                    if (testDevice == null) {
+                        sentDownstream++;
+                        actualTps = i;
 
-                        msg("Device " + deviceId + " not found");
+                        // find a device to talk to
+                        long deviceId = deviceIds[r.nextInt(deviceIds.length)];
 
-                    } else {
+                        Device testDevice = deviceMap.get(deviceId);
 
-                        MessageIFace message = null;
+                        if (testDevice == null) {
 
-                        // long deviceId = testDevice.getDeviceId();
-                        long externallMessageId = System.currentTimeMillis();
-                        long latencyMs = -1;
-                        String errorMessage = null;
-                        Date createDate = new Date();
-                        int destinationSegmentId = -1;
-                        long callingOwner = powerco;
-
-                        if (r.nextInt(2) == 0) {
-
-                            message = new GetStatusMessage(deviceId, externallMessageId, latencyMs, errorMessage,
-                                    createDate, destinationSegmentId, callingOwner, null);
+                            msg("Device " + deviceId + " not found");
 
                         } else {
 
-                            byte[] payload = "Hello World".getBytes();
+                            MessageIFace message = null;
 
-                            message = new UpgradeFirmwareMessage(deviceId, externallMessageId, latencyMs, errorMessage,
-                                    createDate, destinationSegmentId, payload, callingOwner);
+                            // long deviceId = testDevice.getDeviceId();
+                            long externallMessageId = System.currentTimeMillis();
+                            long latencyMs = -1;
+                            String errorMessage = null;
+                            Date createDate = new Date();
+                            int destinationSegmentId = -1;
+                            long callingOwner = powerco;
+
+                            if (r.nextInt(2) == 0) {
+
+                                message = new GetStatusMessage(deviceId, externallMessageId, latencyMs, errorMessage,
+                                        createDate, destinationSegmentId, callingOwner, null);
+
+                            } else {
+
+                                byte[] payload = "Hello World".getBytes();
+
+                                message = new UpgradeFirmwareMessage(deviceId, externallMessageId, latencyMs,
+                                        errorMessage, createDate, destinationSegmentId, payload, callingOwner);
+                            }
+
+                            testDevice.addMessage(message);
+                            sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, powerco, message);
+
+                            if (++txTotal % 100000 == 0) {
+                                msg(txTotal + " events processed");
+                            }
+
                         }
 
-                        testDevice.addMessage(message);
-                        sendMessageDownstream(ReferenceData.DOWNSTREAM_TOPIC, powerco, message);
-
-                        if (++txTotal % 100000 == 0) {
-                            msg(txTotal + " events processed");
+                        if (System.currentTimeMillis() > endPassMs) {
+                            break;
                         }
 
                     }
 
-                    if (System.currentTimeMillis() > endPassMs) {
-                        break;
-                    }
+                    // msg("end tps=" + (System.currentTimeMillis() - startPassMs));
+
+                    shc.report("actual_tps_powerco_" + powerco, actualTps, "Actual TPS obtained", tps * 2);
 
                 }
-                
-              //  msg("end tps=" + (System.currentTimeMillis() - startPassMs));
+                // msg("Sleep "+ (endPassMs - System.currentTimeMillis()));
+                shc.report("actual_cycletime_powerco_" + powerco, (int) (endPassMs - System.currentTimeMillis()),
+                        "Actual Cycle Time", 1000);
+                Thread.sleep(endPassMs - System.currentTimeMillis());
 
-                
-                shc.report("actual_tps_powerco_"+powerco, actualTps, "Actual TPS obtained", tps * 2);
-                
-                //msg("Sleep "+ (endPassMs - System.currentTimeMillis()));
-                shc.report("actual_cycletime_powerco_"+powerco, (int)(endPassMs - System.currentTimeMillis()), "Actual Cycle Time", 1000);
-               Thread.sleep(endPassMs - System.currentTimeMillis());
- 
             } catch (Exception e) {
                 msg(e.getMessage());
             }
@@ -245,7 +250,7 @@ public class PretendToBeAPowerCo implements Runnable {
                     reportStats(mainClient, "edge_bl_stats", "edge_bl_stats", "powercostats",
                             "downstreamSent" + powerco, sentDownstream / 60);
 
-                    getStats(shc, mainClient,powerco);
+                    getStats(shc, mainClient, powerco);
 
                     receivedUpstream = 0;
                     sentDownstream = 0;
@@ -357,8 +362,8 @@ public class PretendToBeAPowerCo implements Runnable {
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + powerCoEmulatorId);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,5000);
-        
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 5000);
+
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
 
         msg("Connected to VoltDB via Kafka");
@@ -412,16 +417,16 @@ public class PretendToBeAPowerCo implements Runnable {
                 + Base64.getEncoder().encodeToString(encodedMessage.getBytes());
         final ProducerRecord<Long, String> record = new ProducerRecord<>(topicname, message.getDeviceId(), payload);
 
-        kafkaProducer.send(record); //.get();
+        kafkaProducer.send(record); // .get();
 
     }
 
     private static void getStats(SafeHistogramCache statsCache, Client c, int powerco)
             throws IOException, NoConnectionsException, ProcCallException {
-        
+
         String[] statNames = { "upstreamLatency" };
-        String[] statNames2 = { "actual_tps_powerco_"+powerco,"actual_cycletime_powerco_"+powerco};
-        
+        String[] statNames2 = { "actual_tps_powerco_" + powerco, "actual_cycletime_powerco_" + powerco };
+
         StatsHistogram upstreamLatencyHist = statsCache.get("upstreamLatency");
 
         reportStats(c, "avg", "avg", "AVG_LATENCY", "upstreamLatency", (long) upstreamLatencyHist.getLatencyAverage());
@@ -441,23 +446,18 @@ public class PretendToBeAPowerCo implements Runnable {
 
             reportStats(c, "count", "count", "COUNT_" + statName, "COUNT_" + statName, count);
         }
-        
+
         for (String statName : statNames2) {
 
             StatsHistogram aHistogram = statsCache.get(statName);
 
             for (float pctile : pctiles) {
-                reportStats(c, "tps", statName, "TPS_" + pctile, statName,
-                        aHistogram.getLatencyPct(pctile));
-                
+                reportStats(c, "tps", statName, "TPS_" + pctile, statName, aHistogram.getLatencyPct(pctile));
+
             }
-            
-            reportStats(c, "tps", statName, "TPS_AVG", statName,
-                    (long) aHistogram.getLatencyAverage());
 
+            reportStats(c, "tps", statName, "TPS_AVG", statName, (long) aHistogram.getLatencyAverage());
 
-
-            
         }
     }
 
