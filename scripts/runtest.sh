@@ -13,6 +13,8 @@ DT=`date '+%Y%m%d_%H%M'`
 cd ../jars
 
 kill `ps -deaf | grep java | grep voltdb-edge | awk '{ print $2 }'` 2> /dev/null
+
+echo "DELETE FROM device_messages;" |  sqlcmd--servers=`cat $HOME/.vdbhostnames`
 sleep 5
 
 DEVICE_DURATION=`expr $DURATION + 300`
