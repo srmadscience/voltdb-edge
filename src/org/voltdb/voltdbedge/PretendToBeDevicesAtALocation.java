@@ -73,7 +73,7 @@ import edgeprocs.ReferenceData;
 
 public class PretendToBeDevicesAtALocation implements Runnable {
 
-    private static final long POLL_DELAY = 100;
+    private static final long POLL_DELAY = 1;
     private static final long ONE_MINUTE_MS = 60000;
 
     Client mainClient;
@@ -83,7 +83,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
     long startMs = System.currentTimeMillis();
     HashMap<Long, Device> deviceMap = new HashMap<Long, Device>();
     long[] deviceIds = new long[0];
-    
+
     HashMap<String, ModelEncoderIFace> encoders = new HashMap<String, ModelEncoderIFace>();
     Consumer<Long, String> kafkaDeviceConsumer;
     Producer<Long, String> kafkaProducer;
@@ -111,28 +111,26 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
             ClientResponse deviceCheck = mainClient.callProcedure("GetDevicesForLocationTotal", location);
             deviceCheck.getResults()[0].advanceRow();
-            
+
             long howMany = deviceCheck.getResults()[0].getLong("HOW_MANY");
             long minDeviceId = deviceCheck.getResults()[0].getLong("MIN_DEVICE_ID");
-                    long maxDeviceId = deviceCheck.getResults()[0].getLong("MAX_DEVICE_ID");
-            
+            long maxDeviceId = deviceCheck.getResults()[0].getLong("MAX_DEVICE_ID");
+
             if (deviceCheck.getResults()[0].wasNull()) {
-                
+
                 howMany = 0;
                 minDeviceId = 0;
                 maxDeviceId = 0;
-                
+
                 msg("No devices for this location seen.");
                 msg("will check again in " + ONE_MINUTE_MS + " milliseconds");
-                
+
             } else {
                 msg("Loading Device List can see " + howMany);
-                getDevices(mainClient, location, (int) howMany, (int) minDeviceId,
-                        (int) maxDeviceId);
+                getDevices(mainClient, location, (int) howMany, (int) minDeviceId, (int) maxDeviceId);
                 msg("going back to listening for requests");
-              
-            }
 
+            }
 
         } catch (Exception e) {
             msg(e.getMessage());
@@ -148,6 +146,9 @@ public class PretendToBeDevicesAtALocation implements Runnable {
         long lagMs = 0;
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
+            
+            //long endPassMs = System.currentTimeMillis() + 1000;
+
             try {
 
                 // See if anyone has contacted us
@@ -176,14 +177,12 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                             MessageIFace downstreamRecord = ourDevice.getEncoder().decode(recordAsCSV[2]);
 
- 
                             long eventAge = System.currentTimeMillis() - downstreamRecord.getCreateDate().getTime();
 
                             if (eventAge > lagMs) {
                                 lagMs = eventAge;
                             }
-                            
-   
+
                             // msg(downstreamRecord.getMessageType());
 
                             if (downstreamRecord instanceof GetStatusMessage) {
@@ -271,9 +270,10 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                     if (currentDeviceCount != deviceIds.length) {
 
-                        msg("Refreshing Device List can see " + currentDeviceCount
-                                + " but only know about " + deviceIds.length);
-                        getDevices(mainClient, location, (int) currentDeviceCount, (int) deviceCheck.getResults()[0].getLong("MIN_DEVICE_ID"),
+                        msg("Refreshing Device List can see " + currentDeviceCount + " but only know about "
+                                + deviceIds.length);
+                        getDevices(mainClient, location, (int) currentDeviceCount,
+                                (int) deviceCheck.getResults()[0].getLong("MIN_DEVICE_ID"),
                                 (int) deviceCheck.getResults()[0].getLong("MAX_DEVICE_ID"));
                         msg("going back to listening for requests");
 
@@ -300,6 +300,13 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     e.printStackTrace();
                 }
             }
+
+//            try {
+//                Thread.sleep(endPassMs - System.currentTimeMillis());
+//            } catch (InterruptedException e) {
+//                // TODO Auto-generated catch block
+//                e.printStackTrace();
+//            }
         }
 
     }
@@ -307,10 +314,9 @@ public class PretendToBeDevicesAtALocation implements Runnable {
     protected void getDevices(Client mainClient, int location, int currentDeviceCount, int minDeviceId, int maxDeviceId)
             throws InterruptedException, IOException, NoConnectionsException {
 
-        
         deviceIds = new long[currentDeviceCount];
         deviceMap = new HashMap<Long, Device>();
-        
+
         int deviceIdEntry = 0;
 
         final int batchSize = 100000;
@@ -364,6 +370,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + powerCoEmulatorId);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,5000);
 
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
 

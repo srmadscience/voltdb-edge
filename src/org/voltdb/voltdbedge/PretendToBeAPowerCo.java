@@ -134,7 +134,6 @@ public class PretendToBeAPowerCo implements Runnable {
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
 
-            long startPassMs = System.currentTimeMillis();
             long endPassMs = System.currentTimeMillis() + 1000;
 
             try {
@@ -358,7 +357,8 @@ public class PretendToBeAPowerCo implements Runnable {
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer" + powerCoEmulatorId);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, VoltDBKafkaPartitioner.class.getName());
-
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,5000);
+        
         Consumer<Long, String> newConsumer = new KafkaConsumer<>(props);
 
         msg("Connected to VoltDB via Kafka");
