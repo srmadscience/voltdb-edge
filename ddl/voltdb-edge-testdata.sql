@@ -29,7 +29,7 @@ INSERT INTO network_segments (segment_id,max_message_bytes_per_second) VALUES (8
 INSERT INTO network_segments (segment_id,max_message_bytes_per_second) VALUES (9,1024);
 
 
-INSERT INTO locations (location_id,segment_id,location_name) VALUES (0,1,'Location 0');
+INSERT INTO locations (location_id,segment_id,location_name) VALUES (0,0,'Location 0');
 
 INSERT INTO locations (location_id,segment_id,location_name) VALUES (1,1,'Location 1');
 

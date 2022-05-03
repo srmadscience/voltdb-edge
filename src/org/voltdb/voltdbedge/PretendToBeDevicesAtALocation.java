@@ -395,7 +395,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     "org.apache.kafka.common.serialization.LongDeserializer",
                     "org.apache.kafka.common.serialization.StringDeserializer");
 
-            kafkaDeviceConsumer.subscribe(Collections.singletonList(ReferenceData.SEGMENT_1_TOPIC));
+            kafkaDeviceConsumer.subscribe(Collections.singletonList("segment_"+location+"_topic"));
 
         } catch (Exception e) {
             msg(e.getMessage());

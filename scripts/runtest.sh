@@ -15,10 +15,13 @@ cd ../jars
 kill `ps -deaf | grep java | grep voltdb-edge | awk '{ print $2 }'` 2> /dev/null
 sleep 5
 
+DEVICE_DURATION=`expr $DURATION + 300`
+
+
 while
         [ $LOC -lt $LOCATIONS ]
 do
-        java -jar voltdb-edge-devices.jar `cat $HOME/.vdbhostnames`  ${DURATION} ${LOC} > location_${LOC}_${DT}_${POWERCOS}_${LOCATIONS}_${TPS}_${METERS}.lst  &
+        java -jar voltdb-edge-devices.jar `cat $HOME/.vdbhostnames`  ${DEVICE_DURATION} ${LOC} > location_${LOC}_${DT}_${POWERCOS}_${LOCATIONS}_${TPS}_${METERS}.lst  &
         LOC=`expr $LOC + 1`
 done
 
