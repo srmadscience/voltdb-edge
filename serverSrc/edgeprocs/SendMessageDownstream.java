@@ -139,6 +139,7 @@ public class SendMessageDownstream extends VoltProcedure {
 
     static VoltLogger LOG = new VoltLogger("SendMessageDownstream");
 
+    @SuppressWarnings("deprecation")
     public VoltTable[] run(long deviceId, long callingOwner, String serializedMessage) throws VoltAbortException {
 
         this.setAppStatusCode(ReferenceData.OK);

@@ -111,6 +111,7 @@ public class SafeHistogramCache {
     }
 
     public long getCounter(String type) {
+        @SuppressWarnings("deprecation")
         Long l = new Long(0);
 
         synchronized (theCounterMap) {
@@ -123,6 +124,7 @@ public class SafeHistogramCache {
         return l.longValue();
     }
 
+    @SuppressWarnings("deprecation")
     public void setCounter(String type, long value) {
 
         synchronized (theCounterMap) {
@@ -136,6 +138,7 @@ public class SafeHistogramCache {
 
     }
 
+    @SuppressWarnings("deprecation")
     public void incCounter(String type) {
 
         synchronized (theCounterMap) {

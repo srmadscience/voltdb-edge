@@ -171,8 +171,6 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
         while (System.currentTimeMillis() < (duration * 1000) + startMs) {
 
-            // long endPassMs = System.currentTimeMillis() + 1000;
-
             try {
 
                 // See if anyone has contacted us
@@ -207,15 +205,13 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                                 lagMs = eventAge;
                             }
 
-                            // msg(downstreamRecord.getMessageType());
-
                             if (downstreamRecord instanceof GetStatusMessage) {
                                 GetStatusMessage ourMessage = (GetStatusMessage) downstreamRecord;
                                 MeterReading mr = new MeterReading(ourMessage.getDeviceId(),
                                         ourDevice.getMeterReading());
                                 ourMessage.setJsonPayload(g.toJson(mr));
                                 ourMessage.setErrorMessage("OK");
-                                // msg(ourMessage.toString());
+                                
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
                             } else if (downstreamRecord instanceof DisableFeatureMessage) {
@@ -229,7 +225,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
 
-                                // msg(ourMessage.toString());
+                                
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
                             } else if (downstreamRecord instanceof EnableFeatureMessage) {
@@ -243,7 +239,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 ourDevice.setFeature(ourMessage.getFeatureName(), ourMessage.isEnabled());
                                 ourMessage.setErrorMessage("OK");
-                                // msg(ourMessage.toString());
+                                
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -251,14 +247,14 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 StartMessage ourMessage = (StartMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STARTED");
-                                // msg(ourMessage.toString());
+                                
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
 
                             } else if (downstreamRecord instanceof StopMessage) {
 
                                 StopMessage ourMessage = (StopMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("STOPPED");
-                                // msg(ourMessage.toString());
+                                
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -266,7 +262,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
 
                                 UpgradeFirmwareMessage ourMessage = (UpgradeFirmwareMessage) downstreamRecord;
                                 ourMessage.setErrorMessage("Upgraded " + ourMessage.getPayload().length + " bytes");
-                                // msg(ourMessage.toString());
+                                
                                 sendMessageUpstream("upstream_1_topic", ourMessage);
                                 upstreamSent++;
 
@@ -281,8 +277,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                 }
 
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                msg(e.getMessage());
             }
 
             if (lastStatsTime + ONE_MINUTE_MS < System.currentTimeMillis()) {
@@ -327,17 +322,10 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                     lastStatsTime = System.currentTimeMillis();
 
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    msg(e.getMessage());
                 }
             }
 
-//            try {
-//                Thread.sleep(endPassMs - System.currentTimeMillis());
-//            } catch (InterruptedException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            }
         }
 
     }
@@ -369,8 +357,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
                 }
 
             } catch (IOException | ProcCallException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                msg(e.getMessage());
             }
         }
 
@@ -567,8 +554,7 @@ public class PretendToBeDevicesAtALocation implements Runnable {
             thread.join();
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            msg(e.getMessage());
         }
 
     }

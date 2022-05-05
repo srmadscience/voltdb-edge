@@ -256,6 +256,7 @@ public class SendMessageUpstream extends VoltProcedure {
         return null;
     }
 
+    @SuppressWarnings("deprecation")
     private ModelEncoderIFace getEncoder(long deviceId, String modelEncoderClassName, String modelNumber) {
         // Do any needed translations
         ModelEncoderIFace ourEncoder = encoders.get(modelNumber);

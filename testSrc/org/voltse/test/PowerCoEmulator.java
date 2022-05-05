@@ -249,13 +249,8 @@ public class PowerCoEmulator {
         try {
             PowerCoEmulator p = new PowerCoEmulator();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            msg(e.getMessage());
         }
-
-    }
-
-    public void close() {
 
     }
 

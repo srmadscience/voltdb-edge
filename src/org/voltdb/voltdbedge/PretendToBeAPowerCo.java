@@ -166,8 +166,7 @@ public class PretendToBeAPowerCo implements Runnable {
                 // See if anyone has contacted us
                 ConsumerRecords<Long, String> consumerRecords = kafkaPowercoConsumer
                         .poll(Duration.ofMillis(POLL_DELAY));
-                // msg("end poll=" + (System.currentTimeMillis() - startPassMs));
-
+ 
                 kafkaPowercoConsumer.commitAsync();
 
                 receivedUpstream += consumerRecords.count();
@@ -182,16 +181,13 @@ public class PretendToBeAPowerCo implements Runnable {
                         String[] recordAsCSV = aRecord.value().split(",");
                         recordAsCSV[3] = new String(Base64.getDecoder().decode(recordAsCSV[3].getBytes()));
                         MessageIFace record = jsonenc.decode(recordAsCSV[3]);
-                        // msg("Got incoming message " + record.toString());
-
+  
                         shc.reportLatency("upstreamLatency", record.getCreateDate().getTime(),
                                 "Latency to send data upstream", LATENCY_HISTOGRAM_SIZE);
 
                     }
 
                 }
-
-                // msg("end process=" + (System.currentTimeMillis() - startPassMs));
 
                 if (System.currentTimeMillis() < (duration * 1000) + startMs + SHUTDOWN_BUFFER_MS) {
 
@@ -215,7 +211,6 @@ public class PretendToBeAPowerCo implements Runnable {
 
                             MessageIFace message = null;
 
-                            // long deviceId = testDevice.getDeviceId();
                             long externallMessageId = System.currentTimeMillis();
                             long latencyMs = -1;
                             String errorMessage = null;
@@ -251,12 +246,9 @@ public class PretendToBeAPowerCo implements Runnable {
 
                     }
 
-                    // msg("end tps=" + (System.currentTimeMillis() - startPassMs));
-
                     shc.report("actual_tps_powerco_" + powerco, actualTps, "Actual TPS obtained", tps * 2);
 
                 }
-                // msg("Sleep "+ (endPassMs - System.currentTimeMillis()));
                 shc.report("actual_cycletime_powerco_" + powerco, (int) (endPassMs - System.currentTimeMillis()),
                         "Actual Cycle Time", 1000);
                 Thread.sleep(endPassMs - System.currentTimeMillis());
@@ -281,8 +273,7 @@ public class PretendToBeAPowerCo implements Runnable {
                     lastStatsTime = System.currentTimeMillis();
 
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    msg(e.getMessage());
                 }
             }
 
@@ -361,8 +352,7 @@ public class PretendToBeAPowerCo implements Runnable {
                     }
 
                 } catch (IOException | ProcCallException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    msg(e.getMessage());
                 }
             }
 
@@ -601,16 +591,13 @@ public class PretendToBeAPowerCo implements Runnable {
         try {
             Client c = connectVoltDB(hostnames);
 
-            // deleteOldData(c, powerrco);
-
             Thread thread = new Thread(
                     new PretendToBeAPowerCo(c, hostnames, tps, duration, howmany, queryseconds, powerrco));
             thread.start();
             thread.join();
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            msg(e.getMessage());
         }
 
     }

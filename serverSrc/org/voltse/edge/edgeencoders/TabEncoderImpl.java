@@ -44,6 +44,7 @@ public class TabEncoderImpl implements ModelEncoderIFace {
 
         String className = BaseMessage.delimitedMessageType(ReferenceData.DELIM_CHAR, s);
 
+        @SuppressWarnings("deprecation")
         MessageIFace mi = (MessageIFace) Class.forName(ReferenceData.EDGEMESSAGES + className).newInstance();
         mi.setInternals(fields);
 
